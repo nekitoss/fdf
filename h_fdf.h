@@ -3,6 +3,6 @@
 // # include "assert.h"
 
 # include "libft/libft.h"
-# include <mlx.h>
+// # include <mlx.h>
 
 #endif
