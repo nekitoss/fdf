@@ -68,39 +68,30 @@ void		del_struct(t_fdf *ls)
 	// ft_arrdel((void ***)(&(ls->text)));
 }
 
-void		count_rows(t_fdf *ls)
+void		count_save_rows(t_fdf *ls)
 {
+	size_t	i;
+
 	ls->fd = open(ls->addr, O_RDONLY);
 	while ((ls->ret = get_next_line(ls->fd, &(ls->line))) > 0)
 	{
 		ft_strdel(&(ls->line));
 		(ls->num_rows)++;
 	}
-	if (ls->ret < 0)
+	if (ls->fd <0 || ls->ret < 0)
 		error("Error opening the file ");
 	if (ls->num_rows == 0)
 		error_msg("Error : Empty map file!");
-	ls->ret = -1;
-	ls->fd = -1;
 	close(ls->fd);
-}
-
-void		save_rows(t_fdf *ls)
-{
+	i = 0;
 	ls->fd = open(ls->addr, O_RDONLY);
-	if (ls->fd >= 0)
+	ls->text = (char **)ft_newarr(ls->num_rows);
+	while ((ls->ret = get_next_line(ls->fd, &(ls->line))) > 0)
 	{
-		// ls->text = (char **)ft_newarr(0);
-		while ((ls->ret = get_next_line(ls->fd, &(ls->line))) > 0)
-		{
-
-		}
-		// print_struct(ls);
-		// printf("ft_cntstr=%d\n", ft_cntchr((ls->line), ' ') + 1);
-		// printf("%s\n", (ls->line));
+		(ls->text)[i] = ls->line;
+		i++;
 	}
-	else
-		error("Error opening the file ");
+	print_struct(ls);
 	close(ls->fd);
 }
 
@@ -112,9 +103,9 @@ int			main(int argc, char **argv)
 	if (argc == 2)
 	{
 		ls->addr = argv[1];
-		count_rows(ls);
+		count_save_rows(ls);
 		printf("rows = %zu\n", ls->num_rows);
-		save_rows(ls);
+		// save_rows(ls);
 	}
 	else
 		ft_putendl("Usage : ./fdf <filename>");
