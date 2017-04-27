@@ -26,19 +26,32 @@ void		error_msg(char *str)
 
 void		print_struct(t_fdf *ls)
 {
-	int len;
-	int i;
+	size_t len;
+	size_t i;
+	size_t j;
 
 	i = 0;
 	len = 0;
 	printf("Struct ----------------------\n");
-	// printf("fd = %d\n", ls->fd);
-	// printf("*arr=\n");
-	// len = ft_arrlen(arr);
-	// while (len-- > 0)
-	// 	printf("%s\n", );
+	printf("fd = %d\n", ls->fd);
+	printf("cols = %zu\n", ls->num_cols);
+	printf("rows = %zu\n", ls->num_rows);
+	printf("*arr=\n");
+	len = ft_arrlen((void **)ls->arr);
+	while (i < len)
+	{
+		j = 0;
+		while (j < ls->num_cols)
+		{
+			printf(" %4.1f", (ls->arr)[i][j]);
+			j++;
+		}
+		printf("\n");
+		i++;
+	}
 	printf("**text=\n");
 	len = ft_arrlen((void **)ls->text);
+	i = 0;
 	while (i < len)
 	{
 		printf("%p:%s\n", (ls->text)[i],(ls->text)[i]);
@@ -68,6 +81,43 @@ void		del_struct(t_fdf *ls)
 	// ft_arrdel((void ***)(&(ls->text)));
 }
 
+void		convert_row(t_fdf *ls, char **row, size_t r_num)
+{
+	size_t	i;
+
+	i = 0;
+	if (ls->num_cols &&
+		ls->num_cols == ft_arrlen((void **)row))
+	{
+		ls->arr[r_num] = (double *)ft_memalloc(sizeof(double) * ls->num_cols);
+		while (i < ls->num_cols)
+		{
+			(ls->arr)[r_num][i] = (double)ft_atoi(row[i]);
+			i++;
+		}
+		// ft_strdel(&((ls->text)[i]));
+	}
+	else
+		error_msg("Wrong line length in map!");
+}
+
+void		rows_into_array(t_fdf *ls)
+{
+	size_t	i;
+	char	**tmp;
+
+	i = 0;
+	tmp = ft_strsplit((ls->text)[i], ' ');
+	ls->num_cols = ft_arrlen((void **)tmp);
+	ft_arrdel((void ***)&tmp);
+	ls->arr = (double **)ft_newarr(ls->num_rows);
+	while (i < ls->num_rows)
+	{
+		convert_row(ls, ft_strsplit((ls->text)[i],' '), i);
+		i++;
+	}
+}
+
 void		count_save_rows(t_fdf *ls)
 {
 	size_t	i;
@@ -78,7 +128,7 @@ void		count_save_rows(t_fdf *ls)
 		ft_strdel(&(ls->line));
 		(ls->num_rows)++;
 	}
-	if (ls->fd <0 || ls->ret < 0)
+	if (ls->fd < 0 || ls->ret < 0)
 		error("Error opening the file ");
 	if (ls->num_rows == 0)
 		error_msg("Error : Empty map file!");
@@ -91,7 +141,6 @@ void		count_save_rows(t_fdf *ls)
 		(ls->text)[i] = ls->line;
 		i++;
 	}
-	print_struct(ls);
 	close(ls->fd);
 }
 
@@ -104,8 +153,9 @@ int			main(int argc, char **argv)
 	{
 		ls->addr = argv[1];
 		count_save_rows(ls);
-		printf("rows = %zu\n", ls->num_rows);
-		// save_rows(ls);
+		// printf("rows = %zu\n", ls->num_rows);
+		rows_into_array(ls);
+		print_struct(ls);
 	}
 	else
 		ft_putendl("Usage : ./fdf <filename>");
