@@ -1,15 +1,22 @@
 #include "h_fdf.h"
 
+#define FLOAT_T double
+
 typedef struct	s_fdf
 {
 	int		fd;
-	double	**arr;
+	FLOAT_T	**arr;
 	char	**text;
 	char	*line;
 	int		ret;
 	size_t	num_rows;
 	size_t	num_cols;
 	char	*addr;
+	void	*mlx_ptr;
+	size_t	size_x;
+	size_t	size_y;
+	void	*win_ptr;
+	int		zoom;
 }				t_fdf;
 
 void		error(char *str)
@@ -89,16 +96,18 @@ void		convert_row(t_fdf *ls, char **row, size_t r_num)
 	if (ls->num_cols &&
 		ls->num_cols == ft_arrlen((void **)row))
 	{
-		ls->arr[r_num] = (double *)ft_memalloc(sizeof(double) * ls->num_cols);
+		ls->arr[r_num] = (FLOAT_T *)ft_memalloc(sizeof(FLOAT_T) * ls->num_cols);
 		while (i < ls->num_cols)
 		{
-			(ls->arr)[r_num][i] = (double)ft_atoi(row[i]);
+			(ls->arr)[r_num][i] = (FLOAT_T)ft_atoi(row[i]);
 			i++;
 		}
 		// ft_strdel(&((ls->text)[i]));
 	}
 	else
-		error_msg("Wrong line length in map!");
+	{printf(" row = %zu\n", i);
+		error_msg("Wrong line length in map!"); 
+	}
 }
 
 void		rows_into_array(t_fdf *ls)
@@ -110,7 +119,7 @@ void		rows_into_array(t_fdf *ls)
 	tmp = ft_strsplit((ls->text)[i], ' ');
 	ls->num_cols = ft_arrlen((void **)tmp);
 	ft_arrdel((void ***)&tmp);
-	ls->arr = (double **)ft_newarr(ls->num_rows);
+	ls->arr = (FLOAT_T **)ft_newarr(ls->num_rows);
 	while (i < ls->num_rows)
 	{
 		convert_row(ls, ft_strsplit((ls->text)[i],' '), i);
@@ -144,6 +153,84 @@ void		count_save_rows(t_fdf *ls)
 	close(ls->fd);
 }
 
+void		print_in_window(t_fdf *ls)
+{
+	size_t	i;
+	size_t	j;
+
+	i = 0;
+	while(i < ls->num_rows && i < ls->size_x)
+	{
+		j = 0;
+		while(j < ls->num_cols && j < ls->size_y)
+		{
+			if (ls->arr[i][j])
+			{
+				mlx_pixel_put(ls->mlx_ptr,  ls->win_ptr, j*ls->zoom + 10, i*ls->zoom + 10, 0x0000FFFF);
+				// printf("put pixel: x=%zu y=%zu\n", i, j);
+			}
+			else
+				mlx_pixel_put(ls->mlx_ptr,  ls->win_ptr, j*ls->zoom + 10, i*ls->zoom + 10, 0x00FF0000);
+			j++;
+		}
+		i++;
+	}
+}
+
+void	zoom_reset(t_fdf *ls)
+{
+	ls->zoom = 1;
+	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
+	print_in_window(ls);
+}
+
+void	zoom_in(t_fdf *ls)
+{
+	ls->zoom += 5;
+	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
+	print_in_window(ls);
+}
+
+void	zoom_out(t_fdf *ls)
+{
+	if (ls->zoom > 5)
+	{
+		ls->zoom -= 5;
+		mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
+		print_in_window(ls);
+	}
+	else
+		zoom_reset(ls);
+}
+
+int		key_f(int key, void *ls_void)
+{
+	t_fdf	*ls;
+
+	ls = (t_fdf *)ls_void;
+	// mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
+		printf("key=%d\n", key);
+	if (key == 69 || key == 24)
+		zoom_in(ls);
+	if (key == 78 || key == 27)
+		zoom_out(ls);
+	if (key == 82)
+		zoom_reset(ls);
+	if (key == 53)
+	{
+		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
+		exit(0);
+	}
+	// mlx_string_put(ls->mlx_ptr, ls->win_ptr, 150, 150, 0x00FFFF, ft_itoa(key));
+	return (0);
+}
+
+int		test(void *ls_void)
+{
+	printf("loop_key = %p\n", ls_void);
+	return (0);
+}
+
 int			main(int argc, char **argv)
 {
 	t_fdf	*ls;
@@ -155,214 +242,35 @@ int			main(int argc, char **argv)
 		count_save_rows(ls);
 		// printf("rows = %zu\n", ls->num_rows);
 		rows_into_array(ls);
-		print_struct(ls);
-	}
-	else
-		ft_putendl("Usage : ./fdf <filename>");
-	del_struct(ls);
-	ls = NULL;
-	return (0);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-void ft_test()
-{
-	char **str;
-	char **arr;
-	int	 i;
-	const int len = 9;
-	char *r="row_";
-	char *tmp;
-	int k;
-
-	str = (char **)malloc(sizeof(char *) * (len + 1));
-	i = 0;
-	while (i < len)
-	{
-		tmp = ft_itoa(i);
-		str[i] = ft_strjoin_d(&r, &tmp, 2);
-		printf("str[%d]=%s\n", i, str[i]);
-		i++;
-	}
-
-printf("\n\n\n");
-
-	arr = (char **)ft_newarr(0);
-	i = 0;
-	while (i < len)
-	{
-		arr = (char **)ft_extarr((void ***)(&arr), i + 1);
-		arr[i] = str[i];
-		//printf("arr[%d]=%s\n", i, arr[i]);
-		printf("straddr=%p | arr=%p\n", str[i], arr[i]);
-		k = 0;
-		while (k <= i)
+		// print_struct(ls);
+		ls->mlx_ptr = mlx_init();
+		ls->zoom = 50;
+		ls->size_x = MIN(2560 ,ls->num_cols * (ls->zoom) + 20);
+		ls->size_y = MIN(1315 ,ls->num_rows * (ls->zoom) + 20);
+		printf("window %zu x %zu\n", ls->size_x, ls->size_y);
+		if (ls->mlx_ptr)
 		{
-			printf("arr[%d]=%s\n", k, arr[k]);
-			k++;
-		}
-		printf("\n");
-		i++;
-	}
-
-printf("\n\n\n");
-
-	i = 0;
-	while (i < len)
-	{
-		if (arr[i] != str[i])
-		{
-			printf("straddr=%p | arr=%p\n", str[i], arr[i]);
-			printf("str[%d]=%s | arr[%d]=%s\n", i, str[i], i, arr[i]);
-		}
-		i++;
-	}
-	// цвет 2/4/6/8
-	// цвет не цвет
-	// не букви
-	// прямокутна
-	// пуста
-
-	// str = (char **)malloc(sizeof(char *) * 3);
-	// str[0] = strdup("1row1");
-	// str[1] = strdup("2row2");
-	// str[2] = strdup("3row3");
-	// printf("str addr=%p\n", str);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-	// printf("str1: addr=%p data=%s\n", str[1],str[1]);
-	// printf("str2: addr=%p data=%s\n", str[2],str[2]);
-
-	// arr = (char **)ft_newarr(1);
-	// printf("\n\n\narr_1 addr=%p\n", arr);
-	// printf("arr0: addr=%p data=%s\n", arr[0],arr[0]);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-	// arr[0] = str[0];
-	// printf("\narr0: addr=%p data=%s\n", arr[0],arr[0]);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-
-
-	// arr = (char **)ft_extarr((void **)(arr), 2);
-	// printf("\n\n\narr_2 addr=%p\n", arr);
-	// printf("arr0: addr=%p data=%s\n", arr[0],arr[0]);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-	// printf("arr1: addr=%p data=%s\n", arr[1],arr[1]);
-	// printf("str1: addr=%p data=%s\n", str[1],str[1]);
-	// arr[1] = str[1];
-	// printf("\narr0: addr=%p data=%s\n", arr[0],arr[0]);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-	// printf("arr1: addr=%p data=%s\n", arr[1],arr[1]);
-	// printf("str1: addr=%p data=%s\n", str[1],str[1]);
-
-	// arr = (char **)ft_extarr((void **)(arr), 2);
-	// printf("\n\n\narr_2 addr=%p\n", arr);
-	// printf("arr0: addr=%p data=%s\n", arr[0],arr[0]);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-	// printf("arr1: addr=%p data=%s\n", arr[1],arr[1]);
-	// printf("str1: addr=%p data=%s\n", str[1],str[1]);
-	// printf("arr1: addr=%p data=%s\n", arr[2],arr[2]);
-	// printf("str1: addr=%p data=%s\n", str[2],str[2]);
-	// arr[2] = str[2];
-	// printf("\narr0: addr=%p data=%s\n", arr[0],arr[0]);
-	// printf("str0: addr=%p data=%s\n", str[0],str[0]);
-	// printf("arr1: addr=%p data=%s\n", arr[1],arr[1]);
-	// printf("str1: addr=%p data=%s\n", str[1],str[1]);
-	// printf("arr1: addr=%p data=%s\n", arr[2],arr[2]);
-	// printf("str1: addr=%p data=%s\n", str[2],str[2]);
-	// 	printf("arr3: addr=%p data=%s\n", arr[3],arr[3]);
-
-
-}
-*/
-// int main(void)
-// {
-// 	ft_test();
-// 	return 0;
-// }
-/*
-
-int		main(int argc, char **argv)
-{
-	t_fdf	*ls;
-	int		i;
-	char	*line;
-
-	
-	while(1)
-	{
-	ls = (t_fdf *)ft_memalloc(sizeof(t_fdf));
-	i = 0;
-	if (argc == 2)
-	{
-		ls->fd = open(argv[1], O_RDONLY);
-		if (ls->fd >= 0)
-		{
-			ls->text = (char **)ft_newarr(0);
-			while (get_next_line(ls->fd, &line) > 0)
+			ls->win_ptr = mlx_new_window(ls->mlx_ptr, ls->size_x, ls->size_y,
+				ls->addr);
+			if (ls->win_ptr)
 			{
-				if (!(*line))
-				{
-					return (1);
-				}
-				printf("1: line=%p : %s\n", line, line);
-				// print_struct(ls);
-				ls->text = (char **)ft_extarr((void ***)&(ls->text), i + 1);
-				(ls->text)[i] = line;
-				printf("2: line=%p : %s\n", line, line);
-				if (!(*line))
-				{
-					print_struct(ls);
-					printf("RETURN ERROR\n");
-					return (1);
-				}
-				// printf("lstx=%p : %s\n", (ls->text)[i], (ls->text)[i]);
-				// print_struct(ls);
-				i++;
+				print_in_window(ls);
+				mlx_key_hook (ls->win_ptr, key_f, (void *)ls);
+				// mlx_expose_hook (ls->win_ptr, test, (void *)ls);
+				
+				mlx_loop(ls->mlx_ptr);
 			}
-			// print_struct(ls);
-			// printf("ft_cntstr=%d\n", ft_cntchr(line, ' ') + 1);
-			// printf("%s\n", line);
 		}
 		else
-			perror("Error opening the file");
+			error("MLX error:");
 	}
 	else
 		ft_putendl("Usage : ./fdf <filename>");
-	close(ls->fd);
 	del_struct(ls);
 	ls = NULL;
-	}
 	return (0);
-}*/
+}
 
+// цвет 2/4/6/8
+// цвет не цвет
+// не букви
