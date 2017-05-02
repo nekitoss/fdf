@@ -17,6 +17,11 @@ typedef struct	s_fdf
 	size_t	size_y;
 	void	*win_ptr;
 	int		zoom;
+	size_t	x1;
+	size_t	y1;
+	size_t	x2;
+	size_t	y2;
+	
 }				t_fdf;
 
 void		error(char *str)
@@ -88,6 +93,70 @@ void		del_struct(t_fdf *ls)
 	// ft_arrdel((void ***)(&(ls->text)));
 }
 
+void		draw_line(t_fdf *ls)
+{
+	int			error;
+	int			error2;
+	int			delta_y;
+	int			delta_x;
+
+	// printf("drw=%zu:%zu; %zu:%zu\n", ls->x1, ls->y1, ls->x2, ls->y2);
+	delta_y = ABS(ls->y2 - ls->y1);
+	delta_x = ABS(ls->x2 - ls->x1);
+	error = delta_x - delta_y;
+	error2 = error * 2;
+	while (ls->x1 != ls->x2 || ls->y1 != ls->y2)
+	{
+		mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, ls->x1 + 10,
+			ls->y1 + 10, 0x000000FF);
+		if (error2 > -delta_y)
+		{
+			error -= delta_y;
+			ls->x1 += (ls->x1 < ls->x2 ? 1 : -1);
+		}
+		if (error2 < delta_x)
+		{
+			error += delta_x;
+			ls->y1 += (ls->y1 < ls->y2 ? 1 : -1);
+		}
+	}
+}
+
+void		coun_coord(t_fdf *ls, size_t i, size_t j)
+{
+	ls->y1 = i * ls->zoom ;
+	ls->x1 = j * ls->zoom ;
+	ls->x2 = (j + ((j < ls->num_cols - 1) ? 1 : 0)) * ls->zoom ;
+	ls->y2 = (i) * ls->zoom ;			
+	draw_line(ls);
+	ls->y1 = i * ls->zoom ;
+	ls->x1 = j * ls->zoom ;
+	ls->x2 = (j) * ls->zoom ;
+	ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
+	draw_line(ls);
+}
+
+void		print_lines(t_fdf *ls)
+{
+	size_t	i;
+	size_t	j;
+
+	i = 0;
+	while (i < ls->num_rows && i < ls->size_x)
+	{
+		j = 0;
+		while (j < ls->num_cols && j < ls->size_y)
+		{
+			if (ls->arr[i][j])
+			{
+				coun_coord(ls, i ,j);
+			}
+			j++;
+		}
+		i++;
+	}
+}
+
 void		convert_row(t_fdf *ls, char **row, size_t r_num)
 {
 	size_t	i;
@@ -105,9 +174,7 @@ void		convert_row(t_fdf *ls, char **row, size_t r_num)
 		// ft_strdel(&((ls->text)[i]));
 	}
 	else
-	{printf(" row = %zu\n", i);
-		error_msg("Wrong line length in map!"); 
-	}
+		error_msg("Wrong line length in map!");
 }
 
 void		rows_into_array(t_fdf *ls)
@@ -122,7 +189,7 @@ void		rows_into_array(t_fdf *ls)
 	ls->arr = (FLOAT_T **)ft_newarr(ls->num_rows);
 	while (i < ls->num_rows)
 	{
-		convert_row(ls, ft_strsplit((ls->text)[i],' '), i);
+		convert_row(ls, ft_strsplit((ls->text)[i], ' '), i);
 		i++;
 	}
 }
@@ -159,39 +226,41 @@ void		print_in_window(t_fdf *ls)
 	size_t	j;
 
 	i = 0;
-	while(i < ls->num_rows && i < ls->size_x)
+	while (i < ls->num_rows && i < ls->size_x)
 	{
 		j = 0;
-		while(j < ls->num_cols && j < ls->size_y)
+		while (j < ls->num_cols && j < ls->size_y)
 		{
 			if (ls->arr[i][j])
 			{
-				mlx_pixel_put(ls->mlx_ptr,  ls->win_ptr, j*ls->zoom + 10, i*ls->zoom + 10, 0x0000FFFF);
+				mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, j * ls->zoom + 10,
+					i * ls->zoom + 10, 0x0000FFFF);
 				// printf("put pixel: x=%zu y=%zu\n", i, j);
 			}
 			else
-				mlx_pixel_put(ls->mlx_ptr,  ls->win_ptr, j*ls->zoom + 10, i*ls->zoom + 10, 0x00FF0000);
+				mlx_pixel_put(ls->mlx_ptr, ls->win_ptr,
+					j * ls->zoom + 10, i * ls->zoom + 10, 0x00FF0000);
 			j++;
 		}
 		i++;
 	}
 }
 
-void	zoom_reset(t_fdf *ls)
+void		zoom_reset(t_fdf *ls)
 {
 	ls->zoom = 1;
 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
 	print_in_window(ls);
 }
 
-void	zoom_in(t_fdf *ls)
+void		zoom_in(t_fdf *ls)
 {
 	ls->zoom += 5;
 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
 	print_in_window(ls);
 }
 
-void	zoom_out(t_fdf *ls)
+void		zoom_out(t_fdf *ls)
 {
 	if (ls->zoom > 5)
 	{
@@ -203,7 +272,7 @@ void	zoom_out(t_fdf *ls)
 		zoom_reset(ls);
 }
 
-int		key_f(int key, void *ls_void)
+int			key_f(int key, void *ls_void)
 {
 	t_fdf	*ls;
 
@@ -225,7 +294,7 @@ int		key_f(int key, void *ls_void)
 	return (0);
 }
 
-int		test(void *ls_void)
+int			test(void *ls_void)
 {
 	printf("loop_key = %p\n", ls_void);
 	return (0);
@@ -245,8 +314,8 @@ int			main(int argc, char **argv)
 		// print_struct(ls);
 		ls->mlx_ptr = mlx_init();
 		ls->zoom = 50;
-		ls->size_x = MIN(2560 ,ls->num_cols * (ls->zoom) + 20);
-		ls->size_y = MIN(1315 ,ls->num_rows * (ls->zoom) + 20);
+		ls->size_x = MIN(2560, ls->num_cols * (ls->zoom) + 20);
+		ls->size_y = MIN(1315, ls->num_rows * (ls->zoom) + 20);
 		printf("window %zu x %zu\n", ls->size_x, ls->size_y);
 		if (ls->mlx_ptr)
 		{
@@ -255,9 +324,9 @@ int			main(int argc, char **argv)
 			if (ls->win_ptr)
 			{
 				print_in_window(ls);
-				mlx_key_hook (ls->win_ptr, key_f, (void *)ls);
+				print_lines(ls);
+				mlx_key_hook(ls->win_ptr, key_f, (void *)ls);
 				// mlx_expose_hook (ls->win_ptr, test, (void *)ls);
-				
 				mlx_loop(ls->mlx_ptr);
 			}
 		}
@@ -270,7 +339,3 @@ int			main(int argc, char **argv)
 	ls = NULL;
 	return (0);
 }
-
-// цвет 2/4/6/8
-// цвет не цвет
-// не букви
