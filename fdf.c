@@ -122,7 +122,7 @@ void		draw_line(t_fdf *ls)
 	}
 }
 
-void		coun_coord(t_fdf *ls, size_t i, size_t j)
+/*void		coun_coord(t_fdf *ls, size_t i, size_t j)
 {
 	ls->y1 = i * ls->zoom ;
 	ls->x1 = j * ls->zoom ;
@@ -134,7 +134,7 @@ void		coun_coord(t_fdf *ls, size_t i, size_t j)
 	ls->x2 = (j) * ls->zoom ;
 	ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
 	draw_line(ls);
-}
+}*/
 
 void		print_lines(t_fdf *ls)
 {
@@ -147,10 +147,20 @@ void		print_lines(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols && j < ls->size_y)
 		{
-			if (ls->arr[i][j])
-			{
-				coun_coord(ls, i ,j);
-			}
+			// if (ls->arr[i][j])
+			// {
+			// 	coun_coord(ls, i ,j);
+			// }
+			ls->y1 = i * ls->zoom ;
+			ls->x1 = j * ls->zoom ;
+			ls->x2 = (j + ((j < ls->num_cols - 1) ? 1 : 0)) * ls->zoom ;
+			ls->y2 = (i) * ls->zoom ;			
+			draw_line(ls);
+			ls->y1 = i * ls->zoom ;
+			ls->x1 = j * ls->zoom ;
+			ls->x2 = (j) * ls->zoom ;
+			ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
+			draw_line(ls);
 			j++;
 		}
 		i++;
@@ -260,16 +270,17 @@ void		zoom_in(t_fdf *ls)
 	print_in_window(ls);
 }
 
-void		zoom_out(t_fdf *ls)
+void		zoom(t_fdf *ls, int step)
 {
-	if (ls->zoom > 5)
-	{
-		ls->zoom -= 5;
-		mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
-		print_in_window(ls);
-	}
+	if (step > 0)
+		ls->zoom += step;
+	else if (step < 0 && ls->zoom > -step)
+		ls->zoom += step;
 	else
-		zoom_reset(ls);
+		ls->zoom = 1;
+	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
+	print_in_window(ls);
+	print_lines(ls);
 }
 
 int			key_f(int key, void *ls_void)
@@ -278,14 +289,14 @@ int			key_f(int key, void *ls_void)
 
 	ls = (t_fdf *)ls_void;
 	// mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
-		printf("key=%d\n", key);
-	if (key == 69 || key == 24)
-		zoom_in(ls);
-	if (key == 78 || key == 27)
-		zoom_out(ls);
-	if (key == 82)
-		zoom_reset(ls);
-	if (key == 53)
+		// printf("key=%d\n", key);
+	if (key == 69 || key == 24)//zoom in
+		zoom(ls, 5);
+	if (key == 78 || key == 27)//zoom out
+		zoom(ls, -5);
+	if (key == 82)//zoom reset
+		zoom(ls, 0);
+	if (key == 53)//exit by escape
 	{
 		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
 		exit(0);
@@ -314,8 +325,8 @@ int			main(int argc, char **argv)
 		// print_struct(ls);
 		ls->mlx_ptr = mlx_init();
 		ls->zoom = 50;
-		ls->size_x = MIN(2560, ls->num_cols * (ls->zoom) + 20);
-		ls->size_y = MIN(1315, ls->num_rows * (ls->zoom) + 20);
+		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 20);
+		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 20);
 		printf("window %zu x %zu\n", ls->size_x, ls->size_y);
 		if (ls->mlx_ptr)
 		{
