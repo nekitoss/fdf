@@ -236,24 +236,28 @@ void		zoom(t_fdf *ls, int step)
 
 void		redraw(t_fdf *ls)
 {
-	// printf("clear\n");
+	printf("clear ptr\n");
 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
-	// printf("destroy\n");
+	printf("destroy ptr=%p\n", ls->img_ptr);
 	if (ls->img_ptr)
 		mlx_destroy_image(ls->mlx_ptr, ls->img_ptr);
-	// printf("new_img %dx%d\n", (int)ls->size_x - 19, (int)ls->size_y - 19);
-	ls->img_ptr = mlx_new_image(ls->mlx_ptr, (int)ls->size_x - 19, (int)ls->size_y - 19);
+	printf("new_img %dx%d\n", ls->size_x - 19, ls->size_y - 19);
+	ls->img_ptr = mlx_new_image(ls->mlx_ptr, ls->size_x - 19, ls->size_y - 19);
 	if (!(ls->img_ptr))
 		error("IMG_not created");
-	// printf("get_data\n");
+	printf("new_ptr=%p\n", ls->img_ptr);
+	printf("get_data\n");
 	ls->data = mlx_get_data_addr(ls->img_ptr, &(ls->bits_per_pixel), &(ls->size_line), &(ls->endian));
-	// printf("make_image\n");
+	printf("make_image\n");
 	make_image(ls);
-	// printf("make_lines\n");
+	printf("make_lines\n");
 	make_lines(ls);
-	// printf("put image\n");
+	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
+	printf("put image\n");
 	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
-	
+	// printf("\n"); printBits ((ls->size_x - 20)*(ls->size_y - 20), ls->data);
+	// printBits (4*5, (ls->data)+(ls->size_line));
+	// printf("\n");
 	// print_in_window(ls);
 	// print_lines(ls);
 }
@@ -298,12 +302,12 @@ void		draw_line(t_fdf *ls)
 	delta_x = ABS(ls->x2 - ls->x1);
 	error = delta_x - delta_y;
 	error2 = error * 2;
-	while (ls->x1 != ls->x2 || ls->y1 != ls->y2)
+	while ((ls->x1 != ls->x2 || ls->y1 != ls->y2) && (ls->y1 < ls->size_y - 19 && ls->x1 < ls->size_x - 19))
 	{
 		// mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, ls->x1 + 10,
 			// ls->y1 + 10, 0x000000FF);
 		pixel_to_img(ls, ls->y1, ls->x1, 0x000000FF);
-		// if ( ls->y1 == 1 && ls->x1 < 55)
+		// if ( ls->y1 == 1 && ls->x1 < 10)
 			// printf("%d:%d ", ls->y1, ls->x1);
 		if (error2 > -delta_y)
 		{
@@ -319,11 +323,19 @@ void		draw_line(t_fdf *ls)
 	// printf("\n");
 }
 
-void		pixel_to_img(t_fdf *ls, size_t i, size_t j, int color)
+void		pixel_to_img(t_fdf *ls, int i, int j, int color)
 {
 	int *tmp;
 
+	/*if ((i > ls->size_y - 20) || (j >  ls->size_x - 20))
+	{
+		// printf("%d:%d\n", i, j);
+		return ;
+	}*/
 	tmp = (int *)&(ls->data[IMG_ROW(i) + IMG_COL(j)]);
+	// if (tmp >= (int *)(ls->data)+(ls->size_line) && tmp <=(int *)(ls->data)+(ls->size_line)+4*5)
+	// if (j > 0 && j < 5 && i == 1)
+		// printf("i=%d j=%d\n", i , j);
 	*tmp = color;
 }
 
@@ -366,12 +378,14 @@ void		make_lines(t_fdf *ls)
 			ls->y1 = i * ls->zoom ;
 			ls->x1 = j * ls->zoom ;
 			ls->x2 = (j + ((j < ls->num_cols - 1) ? 1 : 0)) * ls->zoom ;
-			ls->y2 = (i) * ls->zoom ;			
+			ls->y2 = (i) * ls->zoom ;
+			// printf("%d:%d -> %d:%d\n", ls->x1, ls->y1, ls->x2, ls->y2);			
 			draw_line(ls);
 			ls->y1 = i * ls->zoom ;
 			ls->x1 = j * ls->zoom ;
 			ls->x2 = (j) * ls->zoom ;
 			ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
+			// printf("%d:%d -> %d:%d\n\n", ls->x1, ls->y1, ls->x2, ls->y2);
 			draw_line(ls);
 			j++;
 			}

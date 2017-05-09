@@ -2,6 +2,7 @@
 # define H_FDF_H
 // # include "assert.h"
 
+# include <math.h>
 # include "libft/libft.h"
 // # include <mlx.h>
 #include "minilibx_macos/mlx.h"
@@ -62,7 +63,7 @@ int			key_f(int key, void *ls_void);
 int			test(void *ls_void);
 void		make_image(t_fdf *ls);
 void		make_lines(t_fdf *ls);
-void		pixel_to_img(t_fdf *ls, size_t i, size_t j, int color);
+void		pixel_to_img(t_fdf *ls, int i, int j, int color);
 void		redraw(t_fdf *ls);
 
 #endif
