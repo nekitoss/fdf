@@ -11,11 +11,21 @@
 # define IMG_ROW(a) (a * (ls->size_line))
 # define IMG_COL(b) (b * (ls->bits_per_pixel / 8))
 
+typedef struct	s_point
+{
+	FLOAT_T	x;
+	FLOAT_T	y;
+	FLOAT_T	z;
+	int		color;
+}				t_point;
+
 typedef struct	s_fdf
 {
 	int		fd;
-	FLOAT_T	**arr;
+	t_point	**arr;
+	t_point	**orig;
 	char	**text;
+	// t_point	**p;
 	char	*line;
 	int		ret;
 	int		num_rows;
@@ -25,7 +35,7 @@ typedef struct	s_fdf
 	int		size_x;
 	int		size_y;
 	void	*win_ptr;
-	int		zoom;
+	FLOAT_T	zoom;
 	int		x1;
 	int		y1;
 	int		x2;

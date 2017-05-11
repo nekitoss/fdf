@@ -34,7 +34,7 @@ void		print_struct(t_fdf *ls)
 {
 	int len;
 	int i;
-	int j;
+	// int j;
 
 	i = 0;
 	len = 0;
@@ -42,19 +42,19 @@ void		print_struct(t_fdf *ls)
 	printf("fd = %d\n", ls->fd);
 	printf("cols = %d\n", ls->num_cols);
 	printf("rows = %d\n", ls->num_rows);
-	printf("*arr=\n");
-	len = ft_arrlen((void **)ls->arr);
-	while (i < len)
-	{
-		j = 0;
-		while (j < ls->num_cols)
-		{
-			printf(" %4.1f", (ls->arr)[i][j]);
-			j++;
-		}
-		printf("\n");
-		i++;
-	}
+	// printf("*arr=\n");
+	// len = ft_arrlen((void **)ls->arr);
+	// while (i < len)
+	// {
+	// 	j = 0;
+	// 	while (j < ls->num_cols)
+	// 	{
+	// 		printf(" %4.1f", (ls->arr)[i][j]);
+	// 		j++;
+	// 	}
+	// 	printf("\n");
+	// 	i++;
+	// }
 	printf("**text=\n");
 	len = ft_arrlen((void **)ls->text);
 	i = 0;
@@ -71,12 +71,12 @@ void		del_struct(t_fdf *ls)
 	int len;
 
 	len = 0;
-	len = ft_arrlen((void **)ls->arr);
-	while (len >= 0)
-	{
-		ft_strdel((char **)&((ls->arr)[len]));
-		len--;
-	}
+	// len = ft_arrlen((void **)ls->arr);
+	// while (len >= 0)
+	// {
+	// 	ft_strdel((char **)&((ls->arr)[len]));
+	// 	len--;
+	// }
 	len = ft_arrlen((void **)ls->text);
 	while (len >= 0)
 	{
@@ -101,7 +101,7 @@ void		del_struct(t_fdf *ls)
 	draw_line(ls);
 }*/
 
-void		print_lines(t_fdf *ls)
+/*void		print_lines(t_fdf *ls)
 {
 	int	i;
 	int	j;
@@ -112,7 +112,7 @@ void		print_lines(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols && j < ls->size_y)
 		{
-			// if (ls->arr[i][j])
+			// if ((ls->arr[i][j]).z)
 			// {
 			// 	coun_coord(ls, i ,j);
 			// }
@@ -130,7 +130,7 @@ void		print_lines(t_fdf *ls)
 		}
 		i++;
 	}
-}
+}*/
 
 void		convert_row(t_fdf *ls, char **row, int r_num)
 {
@@ -140,13 +140,17 @@ void		convert_row(t_fdf *ls, char **row, int r_num)
 	if (ls->num_cols &&
 		ls->num_cols == (int)ft_arrlen((void **)row))
 	{
-		ls->arr[r_num] = (FLOAT_T *)ft_memalloc(sizeof(FLOAT_T) * ls->num_cols);
+		ls->orig[r_num] = (t_point *)ft_memalloc(sizeof(t_point) * ls->num_cols);
+		ls->arr[r_num] = (t_point *)ft_memalloc(sizeof(t_point) * ls->num_cols);
 		while (i < ls->num_cols)
 		{
-			(ls->arr)[r_num][i] = (FLOAT_T)ft_atoi(row[i]);
+			((ls->orig)[r_num][i]).x = (FLOAT_T)i;
+			((ls->orig)[r_num][i]).y = (FLOAT_T)r_num;
+			((ls->orig)[r_num][i]).z = (FLOAT_T)ft_atoi(row[i]);
 			i++;
 		}
 		// ft_strdel(&((ls->text)[i]));
+		ft_memcpy((void *)ls->arr[r_num], (void *)ls->orig[r_num], sizeof(t_point) * ls->num_cols);
 	}
 	else
 		error_msg("Wrong line length in map!");
@@ -161,7 +165,8 @@ void		rows_into_array(t_fdf *ls)
 	tmp = ft_strsplit((ls->text)[i], ' ');
 	ls->num_cols = ft_arrlen((void **)tmp);
 	ft_arrdel((void ***)&tmp);
-	ls->arr = (FLOAT_T **)ft_newarr(ls->num_rows);
+	ls->arr = (t_point **)ft_newarr(ls->num_rows);
+	ls->orig = (t_point **)ft_newarr(ls->num_rows);
 	while (i < ls->num_rows)
 	{
 		convert_row(ls, ft_strsplit((ls->text)[i], ' '), i);
@@ -195,7 +200,7 @@ void		count_save_rows(t_fdf *ls)
 	close(ls->fd);
 }
 
-void		print_in_window(t_fdf *ls)
+/*void		print_in_window(t_fdf *ls)
 {
 	int	i;
 	int	j;
@@ -206,7 +211,7 @@ void		print_in_window(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols && j < ls->size_y)
 		{
-			if (ls->arr[i][j])
+			if ((ls->arr[i][j]).z)
 			{
 				mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, j * ls->zoom + 10,
 					i * ls->zoom + 10, 0x0000FFFF);
@@ -219,38 +224,38 @@ void		print_in_window(t_fdf *ls)
 		}
 		i++;
 	}
-}
+}*/
 
 void		zoom(t_fdf *ls, int step)
 {
 	if (step > 0)
-		ls->zoom += step;
-	else if (step < 0 && ls->zoom > -step)
-		ls->zoom += step;
+		ls->zoom *= 1.5;
+	else if (step < 0 )//&& ls->zoom > -step)
+		ls->zoom *= 0.5;
 	else
 		ls->zoom = 1;
-	printf("zoom=%d\n", ls->zoom);
+	printf("zoom=%f\n", ls->zoom);
 	redraw(ls);
 	// exit(1);
 }
 
 void		redraw(t_fdf *ls)
 {
-	printf("clear ptr\n");
+	// printf("clear ptr\n");
 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
-	printf("destroy ptr=%p\n", ls->img_ptr);
+	// printf("destroy ptr=%p\n", ls->img_ptr);
 	if (ls->img_ptr)
 		mlx_destroy_image(ls->mlx_ptr, ls->img_ptr);
-	printf("new_img %dx%d\n", ls->size_x - 19, ls->size_y - 19);
+	// printf("new_img %dx%d\n", ls->size_x - 19, ls->size_y - 19);
 	ls->img_ptr = mlx_new_image(ls->mlx_ptr, ls->size_x - 19, ls->size_y - 19);
 	if (!(ls->img_ptr))
 		error("IMG_not created");
-	printf("new_ptr=%p\n", ls->img_ptr);
-	printf("get_data\n");
+	// printf("new_ptr=%p\n", ls->img_ptr);
+	// printf("get_data\n");
 	ls->data = mlx_get_data_addr(ls->img_ptr, &(ls->bits_per_pixel), &(ls->size_line), &(ls->endian));
-	printf("make_image\n");
+	// printf("make_image\n");
 	make_image(ls);
-	printf("make_lines\n");
+	// printf("make_lines\n");
 	make_lines(ls);
 	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
 	printf("put image\n");
@@ -351,7 +356,11 @@ void		make_image(t_fdf *ls)
 		while (j < ls->num_cols && (j * ls->zoom) < ls->size_x - 19)
 		{
 			// printf("%d:%d ", i * ls->zoom, j * ls->zoom);
-			if (ls->arr[i][j])
+			(ls->arr[i][j]).x = (ls->orig[i][j]).x * ls->zoom;
+			(ls->arr[i][j]).y = (ls->orig[i][j]).x * ls->zoom;
+			// printf("arr[%d][%d]= %f:%f\n", i,j,(ls->arr[i][j]).x ,(ls->arr[i][j]).y);
+			// (ls->arr[i][j]).z *= zoom;
+			if ((ls->arr[i][j]).z)
 				pixel_to_img(ls, (i * ls->zoom), (j * ls->zoom), 0x0000FFFF);
 			else
 				pixel_to_img(ls, (i * ls->zoom), (j * ls->zoom), 0x00FF0000);
@@ -373,7 +382,7 @@ void		make_lines(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols && (j * ls->zoom) < ls->size_x - 19)
 		{
-			// if (ls->arr[i][j] > 1)
+			// if ((ls->arr[i][j]).z > 1)
 			{
 			ls->y1 = i * ls->zoom ;
 			ls->x1 = j * ls->zoom ;
@@ -409,7 +418,7 @@ int			main(int argc, char **argv)
 		rows_into_array(ls);
 		// print_struct(ls);
 		ls->mlx_ptr = mlx_init();
-		ls->zoom = 50;
+		ls->zoom = 51;
 		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 20);
 		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 20);
 		printf("window %d x %d\n", ls->size_x, ls->size_y);
@@ -421,13 +430,6 @@ int			main(int argc, char **argv)
 			{
 
 				printf("num_cols=%d, num_rows=%d\n", ls->num_cols, ls->num_rows);
-				// test = (int *)&(ls->data[IMG_ROW(1) + IMG_COL(1)]);
-				// *test = 0x00FFFFFF;
-				// pixel = (t_img *)&(ls->data[IMG_ROW(1) + IMG_COL(1)]);
-				// pixel->t = 0x00;
-				// pixel->r = 0x00;
-				// pixel->g = 0xFF;
-				// pixel->b = 0x00;
 				// printf("%p = %p\n", mlx_get_data_addr(ls->img_ptr, &(ls->bits_per_pixel), &(ls->size_line), &(ls->endian)), ls->data);
 				redraw(ls);
 				printf("bits pp=%d(bits)=%d(bytes), size_line=%d(bytes), endian=%d\n", ls->bits_per_pixel, ls->bits_per_pixel/8,ls->size_line, ls->endian);
@@ -454,3 +456,157 @@ int			main(int argc, char **argv)
 	ls = NULL;
 	return (0);
 }
+
+
+
+
+
+
+/*
+
+
+
+
+void SetRotationMatrix(double alpha, Matrix &matrix)
+{
+    matrix[0] = cos(alpha); 
+    matrix[1] = -sin(alpha);
+    matrix[2] = sin(alpha);
+    matrix[3] = cos(alpha);
+} 
+
+void MultiplyMatrices(Matrix &dest, Matrix &left, Matrix &right)
+{
+    double ldet = left[0] * left[3] - left[1] * left[2];
+    double rdet = right[0] * right[3] - right[1] * right[2];
+    Matrix _dest;
+    _dest[0] = left[0] * right[0] + left[1] * right[2];
+    _dest[1] = left[0] * right[1] + left[1] * right[3];
+    _dest[2] = left[2] * right[0] + left[3] * right[2];
+    _dest[3] = left[2] * right[1] + left[3] * right[3];
+    memcpy(dest, _dest, sizeof(Matrix));
+}
+
+void ApplyMatrixtoPoint(Matrix rot, _Point &point)
+{
+    double _x, _y;
+    _x = point.x;
+    _y = point.y;
+    point.x = _x * rot[0] + _y * rot[1];
+    point.y = _x * rot[2] + _y * rot[3];
+}
+
+
+
+matrix.h
+
+
+typedef double Matrix[4]; 
+
+void SetRotationMatrix(double alpha, Matrix &matrix);
+void MultiplyMatrices(Matrix &dest, Matrix &left, Matrix &right);
+void ApplyMatrixtoPoint(Matrix rot, _Point &point); 
+
+Прим. Следует обратить ваше внимание на функцию MultiplyMatrices. Во многих случаях в роли dest и left выступает одна и та же матрица. Поэтому, если сразу записывать в dest, то получится некорректно. 
+
+Появляется модуль geometry.h и тип ’’точка’’ (_Point): 
+
+#ifndef _POINT 
+    struct _Point
+    {
+        double x, y;
+    };
+    #define _POINT
+#endif 
+
+Достаточно существенно меняется модуль draw.cpp. Ниже он приведен целиком.
+
+draw.cpp
+
+#include <windows.h>
+#include "geometry.h"
+#include "matrix.h" 
+
+int Width, Height;
+Matrix current_rot; 
+
+const int MARGIN = 10; 
+
+void InitRotation()
+{
+    SetRotationMatrix(0.0, current_rot);
+}
+ 
+void AddRotation(double alpha)
+{
+    Matrix additional_rot;
+    SetRotationMatrix(alpha, additional_rot);
+    MultiplyMatrices(current_rot, current_rot, additional_rot);
+}
+  
+void SetWindowSize(int _Width, int _Height)
+{
+    Width = _Width;
+    Height = _Height;
+} 
+
+_Point T(_Point point)
+{
+    _Point TPoint;
+    TPoint.x = MARGIN + (1.0 / 2) * (point.x + 1) * (Width - 2 * MARGIN);
+    TPoint.y = MARGIN + (-1.0 / 2) * (point.y - 1) * (Height - 2 * MARGIN);
+    return TPoint;
+}
+  
+void Draw(HDC hdc)
+{
+    _Point triangle[3];
+    triangle[0].x = 0.0;
+    triangle[0].y = 0.5;
+    triangle[1].x = 0.5;
+    triangle[1].y = 0.0;
+    triangle[2].x = -0.5;
+    triangle[2].y = -0.5; 
+    for (int i = 0; i < 3; i++)
+    {
+        ApplyMatrixtoPoint(current_rot, triangle[i]);
+        triangle[i] = T(triangle[i]);
+    }
+    for (int i = 0; i <= 3; i++)
+    {
+        int j = i % 3;
+        if (i == 0)
+        {
+            MoveToEx(hdc, triangle[j].x, triangle[j].y, NULL);
+        }
+        else
+        {
+            LineTo(hdc, triangle[j].x, triangle[j].y);
+        }
+    }
+} 
+
+draw.h
+
+void Draw(HDC hdc);
+void SetWindowSize(int _Width, int _Height);
+void InitRotation();
+void AddRotation(double alpha);
+
+И наконец в модуле main.cpp добавляется обработчик WM_KEYPRESSED:
+
+    case WM_KEYDOWN: 
+        int KeyPressed; 
+        KeyPressed = int(wParam); 
+        if (KeyPressed == VK_RIGHT)
+        { 
+            AddRotation(-PI / 10); 
+        } 
+
+        if (KeyPressed == VK_LEFT)
+        { 
+            AddRotation(PI / 10); 
+        } 
+        InvalidateRect(hWnd, NULL, FALSE); 
+        break;
+*/
