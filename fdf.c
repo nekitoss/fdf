@@ -273,13 +273,17 @@ int			key_f(int key, void *ls_void)
 
 	ls = (t_fdf *)ls_void;
 	// mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
-		// printf("key=%d\n", key);
+		printf("key=%d\n", key);
 	if (key == 69 || key == 24)//zoom in
 		zoom(ls, 5);
 	if (key == 78 || key == 27)//zoom out
 		zoom(ls, -5);
 	if (key == 82)//zoom reset
 		zoom(ls, 0);
+	if (key == 123)//zoom reset
+		rotate(ls, 45);
+	if (key == 124)//zoom reset
+		rotate(ls, -45);
 	if (key == 53)//exit by escape
 	{
 		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
@@ -342,6 +346,31 @@ void		pixel_to_img(t_fdf *ls, int i, int j, int color)
 	// if (j > 0 && j < 5 && i == 1)
 		// printf("i=%d j=%d\n", i , j);
 	*tmp = color;
+}
+
+void		rotate(t_fdf *ls, int angle)
+{
+	int	i;
+	int	j;
+	int x;
+	int y;
+
+	(ls->arr[i][j]).angle += angle;
+	i = 0;
+	while (i < ls->num_rows)
+	{
+		j = 0;
+		while (j < ls->num_cols)
+		{
+			x = (ls->arr[i][j]).x * cos(angle) - (ls->arr[i][j]).y * sin(angle);
+			y = (ls->arr[i][j]).x * sin(angle) + (ls->arr[i][j]).y * cos(angle);
+			(ls->arr[i][j]).x = x;
+			(ls->arr[i][j]).y = y;
+			pixel_to_img(ls, (i), (j), 0x0000FFFF);
+			j++;
+		}
+		i++;
+	}
 }
 
 void		make_image(t_fdf *ls)

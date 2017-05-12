@@ -45,6 +45,7 @@ typedef struct	s_fdf
 	int		endian;
 	int		size_line;
 	char	*data;
+	int		angle;
 }				t_fdf;
 
 typedef struct	s_img
@@ -75,5 +76,6 @@ void		make_image(t_fdf *ls);
 void		make_lines(t_fdf *ls);
 void		pixel_to_img(t_fdf *ls, int i, int j, int color);
 void		redraw(t_fdf *ls);
+void		rotate(t_fdf *ls, int angle);
 
 #endif
