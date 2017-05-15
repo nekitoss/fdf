@@ -76,6 +76,6 @@ void		make_image(t_fdf *ls);
 void		make_lines(t_fdf *ls);
 void		pixel_to_img(t_fdf *ls, int i, int j, int color);
 void		redraw(t_fdf *ls);
-void		rotate(t_fdf *ls, int angle);
+void		rotate(t_fdf *ls);
 
 #endif

@@ -34,7 +34,7 @@ void		print_struct(t_fdf *ls)
 {
 	int len;
 	int i;
-	// int j;
+	int j;
 
 	i = 0;
 	len = 0;
@@ -42,19 +42,31 @@ void		print_struct(t_fdf *ls)
 	printf("fd = %d\n", ls->fd);
 	printf("cols = %d\n", ls->num_cols);
 	printf("rows = %d\n", ls->num_rows);
-	// printf("*arr=\n");
-	// len = ft_arrlen((void **)ls->arr);
-	// while (i < len)
-	// {
-	// 	j = 0;
-	// 	while (j < ls->num_cols)
-	// 	{
-	// 		printf(" %4.1f", (ls->arr)[i][j]);
-	// 		j++;
-	// 	}
-	// 	printf("\n");
-	// 	i++;
-	// }
+	printf("*orig=\n");
+	while (i < ls->num_rows)
+	{
+		j = 0;
+		while (j < ls->num_cols)
+		{
+			printf(" %4.1f:%4.1f", ((ls->orig)[i][j]).x, ((ls->orig)[i][j]).y);
+			j++;
+		}
+		printf("\n");
+		i++;
+	}
+	i = 0;
+	printf("*arr=\n");
+	while (i < ls->num_rows)
+	{
+		j = 0;
+		while (j < ls->num_cols)
+		{
+			printf(" %4.1f:%4.1f", ((ls->arr)[i][j]).x, ((ls->arr)[i][j]).y);
+			j++;
+		}
+		printf("\n");
+		i++;
+	}
 	printf("**text=\n");
 	len = ft_arrlen((void **)ls->text);
 	i = 0;
@@ -85,6 +97,11 @@ void		del_struct(t_fdf *ls)
 	}
 	// ft_arrdel((void ***)(&(ls->arr)));
 	// ft_arrdel((void ***)(&(ls->text)));
+}
+
+FLOAT_T		rad(double deg)
+{
+	return (deg * M_PI / 180.0);
 }
 
 /*void		coun_coord(t_fdf *ls, int i, int j)
@@ -226,19 +243,6 @@ void		count_save_rows(t_fdf *ls)
 	}
 }*/
 
-void		zoom(t_fdf *ls, int step)
-{
-	if (step > 0)
-		ls->zoom *= 1.5;
-	else if (step < 0 )//&& ls->zoom > -step)
-		ls->zoom *= 0.5;
-	else
-		ls->zoom = 1;
-	printf("zoom=%f\n", ls->zoom);
-	redraw(ls);
-	// exit(1);
-}
-
 void		redraw(t_fdf *ls)
 {
 	// printf("clear ptr\n");
@@ -246,17 +250,22 @@ void		redraw(t_fdf *ls)
 	// printf("destroy ptr=%p\n", ls->img_ptr);
 	if (ls->img_ptr)
 		mlx_destroy_image(ls->mlx_ptr, ls->img_ptr);
-	// printf("new_img %dx%d\n", ls->size_x - 19, ls->size_y - 19);
-	ls->img_ptr = mlx_new_image(ls->mlx_ptr, ls->size_x - 19, ls->size_y - 19);
+	// printf("new_img %dx%d\n", ls->size_x, ls->size_y);
+	ls->img_ptr = mlx_new_image(ls->mlx_ptr, ls->size_x, ls->size_y);
 	if (!(ls->img_ptr))
 		error("IMG_not created");
 	// printf("new_ptr=%p\n", ls->img_ptr);
 	// printf("get_data\n");
 	ls->data = mlx_get_data_addr(ls->img_ptr, &(ls->bits_per_pixel), &(ls->size_line), &(ls->endian));
 	// printf("make_image\n");
-	make_image(ls);
+	// make_image(ls);
+	// printf("rotate\n");
+	if (ls->angle)
+		rotate(ls);
+	else
+		make_image(ls);
 	// printf("make_lines\n");
-	make_lines(ls);
+	// make_lines(ls);
 	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
 	printf("put image\n");
 	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
@@ -265,6 +274,7 @@ void		redraw(t_fdf *ls)
 	// printf("\n");
 	// print_in_window(ls);
 	// print_lines(ls);
+	// print_struct(ls);
 }
 
 int			key_f(int key, void *ls_void)
@@ -275,20 +285,24 @@ int			key_f(int key, void *ls_void)
 	// mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
 		printf("key=%d\n", key);
 	if (key == 69 || key == 24)//zoom in
-		zoom(ls, 5);
+		ls->zoom *= 1.5;
 	if (key == 78 || key == 27)//zoom out
-		zoom(ls, -5);
+		ls->zoom *= 0.5;
 	if (key == 82)//zoom reset
-		zoom(ls, 0);
-	if (key == 123)//zoom reset
-		rotate(ls, 45);
-	if (key == 124)//zoom reset
-		rotate(ls, -45);
+		ls->zoom = 1;
+	if (key == 123)//left
+		(ls->angle) += 5;
+	if (key == 124)//right
+		(ls->angle) -= 5;
+	if (abs(ls->angle) == 360)
+		ls->angle = 0;
 	if (key == 53)//exit by escape
 	{
 		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
 		exit(0);
 	}
+	printf("zoom=%f\n", ls->zoom);
+	redraw(ls);
 	// mlx_string_put(ls->mlx_ptr, ls->win_ptr, 150, 150, 0x00FFFF, ft_itoa(key));
 	return (0);
 }
@@ -311,7 +325,7 @@ void		draw_line(t_fdf *ls)
 	delta_x = ABS(ls->x2 - ls->x1);
 	error = delta_x - delta_y;
 	error2 = error * 2;
-	while ((ls->x1 != ls->x2 || ls->y1 != ls->y2) && (ls->y1 < ls->size_y - 19 && ls->x1 < ls->size_x - 19))
+	while ((ls->x1 != ls->x2 || ls->y1 != ls->y2))
 	{
 		// mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, ls->x1 + 10,
 			// ls->y1 + 10, 0x000000FF);
@@ -345,44 +359,59 @@ void		pixel_to_img(t_fdf *ls, int i, int j, int color)
 	// if (tmp >= (int *)(ls->data)+(ls->size_line) && tmp <=(int *)(ls->data)+(ls->size_line)+4*5)
 	// if (j > 0 && j < 5 && i == 1)
 		// printf("i=%d j=%d\n", i , j);
-	*tmp = color;
+	if ((i < ls->size_y) && (j <  ls->size_x) && i >= 0 && j >= 0)
+		*tmp = color;
 }
 
-void		rotate(t_fdf *ls, int angle)
+void		rotate(t_fdf *ls)
 {
 	int	i;
 	int	j;
-	int x;
-	int y;
+	FLOAT_T x;
+	FLOAT_T y;
 
-	(ls->arr[i][j]).angle += angle;
+	printf("rotate\nangle=%d\n", ls->angle);
+// {
+// 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
+// 	if (ls->img_ptr)
+// 		mlx_destroy_image(ls->mlx_ptr, ls->img_ptr);
+// 	ls->img_ptr = mlx_new_image(ls->mlx_ptr, ls->size_x, ls->size_y);
+// 	ls->data = mlx_get_data_addr(ls->img_ptr, &(ls->bits_per_pixel), &(ls->size_line), &(ls->endian));
+	
+// }
 	i = 0;
 	while (i < ls->num_rows)
 	{
 		j = 0;
 		while (j < ls->num_cols)
 		{
-			x = (ls->arr[i][j]).x * cos(angle) - (ls->arr[i][j]).y * sin(angle);
-			y = (ls->arr[i][j]).x * sin(angle) + (ls->arr[i][j]).y * cos(angle);
+			x = ((ls->orig[i][j]).x * cos(rad(ls->angle)) - (ls->orig[i][j]).y * sin(rad(ls->angle))) * ls->zoom;
+			y = ((ls->orig[i][j]).x * sin(rad(ls->angle)) + (ls->orig[i][j]).y * cos(rad(ls->angle))) * ls->zoom;
+			// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
 			(ls->arr[i][j]).x = x;
 			(ls->arr[i][j]).y = y;
-			pixel_to_img(ls, (i), (j), 0x0000FFFF);
+			if ((ls->arr[i][j]).z)
+				pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, 0x0000FFFF);
+			else
+				pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, 0x00FF0000);
 			j++;
 		}
 		i++;
 	}
+	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
+	// redraw(ls);
 }
 
 void		make_image(t_fdf *ls)
 {
 	int	i;
 	int	j;
-	
+printf("make image\n");
 	i = 0;
-	while (i < ls->num_rows && (i * ls->zoom) < ls->size_y - 19)
+	while (i < ls->num_rows && (i * ls->zoom) < ls->size_y)
 	{
 		j = 0;
-		while (j < ls->num_cols && (j * ls->zoom) < ls->size_x - 19)
+		while (j < ls->num_cols && (j * ls->zoom) < ls->size_x)
 		{
 			// printf("%d:%d ", i * ls->zoom, j * ls->zoom);
 			(ls->arr[i][j]).x = (ls->orig[i][j]).x * ls->zoom;
@@ -406,13 +435,12 @@ void		make_lines(t_fdf *ls)
 	int	j;
 
 	i = 0;
-	while (i < ls->num_rows && (i * ls->zoom) < ls->size_y - 19)
+	while (i < ls->num_rows)
 	{
 		j = 0;
-		while (j < ls->num_cols && (j * ls->zoom) < ls->size_x - 19)
+		while (j < ls->num_cols)
 		{
-			// if ((ls->arr[i][j]).z > 1)
-			{
+/*
 			ls->y1 = i * ls->zoom ;
 			ls->x1 = j * ls->zoom ;
 			ls->x2 = (j + ((j < ls->num_cols - 1) ? 1 : 0)) * ls->zoom ;
@@ -423,7 +451,22 @@ void		make_lines(t_fdf *ls)
 			ls->x1 = j * ls->zoom ;
 			ls->x2 = (j) * ls->zoom ;
 			ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
-			// printf("%d:%d -> %d:%d\n\n", ls->x1, ls->y1, ls->x2, ls->y2);
+*/
+			// if ((ls->arr[i][j]).z > 1)
+			{
+			ls->y1 = (ls->arr[i][j]).y;
+			ls->x1 = (ls->arr[i][j]).x;
+			ls->x2 = (ls->arr[i][(j + ((j < ls->num_cols - 1) ? 1 : 0))]).x;
+			ls->y2 = (ls->arr[i][j]).y;
+			printf("i=%d; j=%d\n", i, (j + ((j < ls->num_cols - 1) ? 1 : 0)));
+			// printf("1)%d:%d -> %d:%d\n", ls->x1, ls->y1, ls->x2, ls->y2);			
+			draw_line(ls);
+			ls->y1 = (ls->arr[i][j]).y;
+			ls->x1 = (ls->arr[i][j]).x;
+			ls->x2 = (ls->arr[i][j]).x;
+			ls->y2 = (ls->arr[(i + ((i < ls->num_rows - 1) ? 1 : 0))][j]).y;
+			printf("i=%d; j=%d\n",(i + ((i < ls->num_rows - 1) ? 1 : 0)),j );
+			// printf("2)%d:%d -> %d:%d\n\n", ls->x1, ls->y1, ls->x2, ls->y2);
 			draw_line(ls);
 			j++;
 			}
@@ -447,13 +490,13 @@ int			main(int argc, char **argv)
 		rows_into_array(ls);
 		// print_struct(ls);
 		ls->mlx_ptr = mlx_init();
-		ls->zoom = 51;
-		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 20);
-		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 20);
+		ls->zoom = 10;
+		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 1);
+		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 1);
 		printf("window %d x %d\n", ls->size_x, ls->size_y);
 		if (ls->mlx_ptr)
 		{
-			ls->win_ptr = mlx_new_window(ls->mlx_ptr, ls->size_x, ls->size_y,
+			ls->win_ptr = mlx_new_window(ls->mlx_ptr, ls->size_x + 19, ls->size_y + 19,
 				ls->addr);
 			if (ls->win_ptr)
 			{
