@@ -260,12 +260,12 @@ void		redraw(t_fdf *ls)
 	// printf("make_image\n");
 	// make_image(ls);
 	// printf("rotate\n");
-	if (ls->angle)
+	if (ls->angle_z)
 		rotate(ls);
 	else
 		make_image(ls);
-	// printf("make_lines\n");
-	// make_lines(ls);
+	printf("make_lines\n");
+	make_lines(ls);
 	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
 	printf("put image\n");
 	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
@@ -291,11 +291,11 @@ int			key_f(int key, void *ls_void)
 	if (key == 82)//zoom reset
 		ls->zoom = 1;
 	if (key == 123)//left
-		(ls->angle) += 5;
+		(ls->angle_z) -= 10;
 	if (key == 124)//right
-		(ls->angle) -= 5;
-	if (abs(ls->angle) == 360)
-		ls->angle = 0;
+		(ls->angle_z) += 10;
+	if (abs(ls->angle_z) == 360)
+		ls->angle_z = 0;
 	if (key == 53)//exit by escape
 	{
 		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
@@ -370,7 +370,7 @@ void		rotate(t_fdf *ls)
 	FLOAT_T x;
 	FLOAT_T y;
 
-	printf("rotate\nangle=%d\n", ls->angle);
+	printf("rotate\nangle=%d\n", ls->angle_z);
 // {
 // 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
 // 	if (ls->img_ptr)
@@ -385,8 +385,8 @@ void		rotate(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols)
 		{
-			x = ((ls->orig[i][j]).x * cos(rad(ls->angle)) - (ls->orig[i][j]).y * sin(rad(ls->angle))) * ls->zoom;
-			y = ((ls->orig[i][j]).x * sin(rad(ls->angle)) + (ls->orig[i][j]).y * cos(rad(ls->angle))) * ls->zoom;
+			y = ((ls->orig[i][j]).x * cos(rad(ls->angle_z)) - (ls->orig[i][j]).y * sin(rad(ls->angle_z))) * ls->zoom;
+			x = ((ls->orig[i][j]).x * sin(rad(ls->angle_z)) + (ls->orig[i][j]).y * cos(rad(ls->angle_z))) * ls->zoom;
 			// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
 			(ls->arr[i][j]).x = x;
 			(ls->arr[i][j]).y = y;
@@ -458,14 +458,14 @@ void		make_lines(t_fdf *ls)
 			ls->x1 = (ls->arr[i][j]).x;
 			ls->x2 = (ls->arr[i][(j + ((j < ls->num_cols - 1) ? 1 : 0))]).x;
 			ls->y2 = (ls->arr[i][j]).y;
-			printf("i=%d; j=%d\n", i, (j + ((j < ls->num_cols - 1) ? 1 : 0)));
+			// printf("i=%d; j=%d\n", i, (j + ((j < ls->num_cols - 1) ? 1 : 0)));
 			// printf("1)%d:%d -> %d:%d\n", ls->x1, ls->y1, ls->x2, ls->y2);			
 			draw_line(ls);
 			ls->y1 = (ls->arr[i][j]).y;
 			ls->x1 = (ls->arr[i][j]).x;
 			ls->x2 = (ls->arr[i][j]).x;
 			ls->y2 = (ls->arr[(i + ((i < ls->num_rows - 1) ? 1 : 0))][j]).y;
-			printf("i=%d; j=%d\n",(i + ((i < ls->num_rows - 1) ? 1 : 0)),j );
+			// printf("i=%d; j=%d\n",(i + ((i < ls->num_rows - 1) ? 1 : 0)),j );
 			// printf("2)%d:%d -> %d:%d\n\n", ls->x1, ls->y1, ls->x2, ls->y2);
 			draw_line(ls);
 			j++;
@@ -528,157 +528,3 @@ int			main(int argc, char **argv)
 	ls = NULL;
 	return (0);
 }
-
-
-
-
-
-
-/*
-
-
-
-
-void SetRotationMatrix(double alpha, Matrix &matrix)
-{
-    matrix[0] = cos(alpha); 
-    matrix[1] = -sin(alpha);
-    matrix[2] = sin(alpha);
-    matrix[3] = cos(alpha);
-} 
-
-void MultiplyMatrices(Matrix &dest, Matrix &left, Matrix &right)
-{
-    double ldet = left[0] * left[3] - left[1] * left[2];
-    double rdet = right[0] * right[3] - right[1] * right[2];
-    Matrix _dest;
-    _dest[0] = left[0] * right[0] + left[1] * right[2];
-    _dest[1] = left[0] * right[1] + left[1] * right[3];
-    _dest[2] = left[2] * right[0] + left[3] * right[2];
-    _dest[3] = left[2] * right[1] + left[3] * right[3];
-    memcpy(dest, _dest, sizeof(Matrix));
-}
-
-void ApplyMatrixtoPoint(Matrix rot, _Point &point)
-{
-    double _x, _y;
-    _x = point.x;
-    _y = point.y;
-    point.x = _x * rot[0] + _y * rot[1];
-    point.y = _x * rot[2] + _y * rot[3];
-}
-
-
-
-matrix.h
-
-
-typedef double Matrix[4]; 
-
-void SetRotationMatrix(double alpha, Matrix &matrix);
-void MultiplyMatrices(Matrix &dest, Matrix &left, Matrix &right);
-void ApplyMatrixtoPoint(Matrix rot, _Point &point); 
-
-Прим. Следует обратить ваше внимание на функцию MultiplyMatrices. Во многих случаях в роли dest и left выступает одна и та же матрица. Поэтому, если сразу записывать в dest, то получится некорректно. 
-
-Появляется модуль geometry.h и тип ’’точка’’ (_Point): 
-
-#ifndef _POINT 
-    struct _Point
-    {
-        double x, y;
-    };
-    #define _POINT
-#endif 
-
-Достаточно существенно меняется модуль draw.cpp. Ниже он приведен целиком.
-
-draw.cpp
-
-#include <windows.h>
-#include "geometry.h"
-#include "matrix.h" 
-
-int Width, Height;
-Matrix current_rot; 
-
-const int MARGIN = 10; 
-
-void InitRotation()
-{
-    SetRotationMatrix(0.0, current_rot);
-}
- 
-void AddRotation(double alpha)
-{
-    Matrix additional_rot;
-    SetRotationMatrix(alpha, additional_rot);
-    MultiplyMatrices(current_rot, current_rot, additional_rot);
-}
-  
-void SetWindowSize(int _Width, int _Height)
-{
-    Width = _Width;
-    Height = _Height;
-} 
-
-_Point T(_Point point)
-{
-    _Point TPoint;
-    TPoint.x = MARGIN + (1.0 / 2) * (point.x + 1) * (Width - 2 * MARGIN);
-    TPoint.y = MARGIN + (-1.0 / 2) * (point.y - 1) * (Height - 2 * MARGIN);
-    return TPoint;
-}
-  
-void Draw(HDC hdc)
-{
-    _Point triangle[3];
-    triangle[0].x = 0.0;
-    triangle[0].y = 0.5;
-    triangle[1].x = 0.5;
-    triangle[1].y = 0.0;
-    triangle[2].x = -0.5;
-    triangle[2].y = -0.5; 
-    for (int i = 0; i < 3; i++)
-    {
-        ApplyMatrixtoPoint(current_rot, triangle[i]);
-        triangle[i] = T(triangle[i]);
-    }
-    for (int i = 0; i <= 3; i++)
-    {
-        int j = i % 3;
-        if (i == 0)
-        {
-            MoveToEx(hdc, triangle[j].x, triangle[j].y, NULL);
-        }
-        else
-        {
-            LineTo(hdc, triangle[j].x, triangle[j].y);
-        }
-    }
-} 
-
-draw.h
-
-void Draw(HDC hdc);
-void SetWindowSize(int _Width, int _Height);
-void InitRotation();
-void AddRotation(double alpha);
-
-И наконец в модуле main.cpp добавляется обработчик WM_KEYPRESSED:
-
-    case WM_KEYDOWN: 
-        int KeyPressed; 
-        KeyPressed = int(wParam); 
-        if (KeyPressed == VK_RIGHT)
-        { 
-            AddRotation(-PI / 10); 
-        } 
-
-        if (KeyPressed == VK_LEFT)
-        { 
-            AddRotation(PI / 10); 
-        } 
-        InvalidateRect(hWnd, NULL, FALSE); 
-        break;
-*/

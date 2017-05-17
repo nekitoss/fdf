@@ -45,7 +45,9 @@ typedef struct	s_fdf
 	int		endian;
 	int		size_line;
 	char	*data;
-	int		angle;
+	int		angle_x;
+	int		angle_y;
+	int		angle_z;
 }				t_fdf;
 
 typedef struct	s_img
