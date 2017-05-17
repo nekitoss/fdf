@@ -264,8 +264,8 @@ void		redraw(t_fdf *ls)
 		rotate(ls);
 	else
 		make_image(ls);
-	printf("make_lines\n");
-	make_lines(ls);
+	// printf("make_lines\n");
+	// make_lines(ls);
 	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
 	printf("put image\n");
 	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
@@ -294,6 +294,14 @@ int			key_f(int key, void *ls_void)
 		(ls->angle_z) -= 10;
 	if (key == 124)//right
 		(ls->angle_z) += 10;
+	if (key == 125)//down
+		(ls->angle_x) -= 10;
+	if (key == 126)//UP
+		(ls->angle_x) += 10;
+	if (abs(ls->angle_x) == 360)
+		ls->angle_x = 0;
+	if (abs(ls->angle_y) == 360)
+		ls->angle_y = 0;
 	if (abs(ls->angle_z) == 360)
 		ls->angle_z = 0;
 	if (key == 53)//exit by escape
@@ -301,7 +309,7 @@ int			key_f(int key, void *ls_void)
 		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
 		exit(0);
 	}
-	printf("zoom=%f\n", ls->zoom);
+	printf("zoom=%.0f\n", ls->zoom);
 	redraw(ls);
 	// mlx_string_put(ls->mlx_ptr, ls->win_ptr, 150, 150, 0x00FFFF, ft_itoa(key));
 	return (0);
@@ -369,8 +377,9 @@ void		rotate(t_fdf *ls)
 	int	j;
 	FLOAT_T x;
 	FLOAT_T y;
+	FLOAT_T z;
 
-	printf("rotate\nangle=%d\n", ls->angle_z);
+	printf("rotate\nangle: x=%d; y=%d; z=%d\n", ls->angle_x, ls->angle_y, ls->angle_z);
 // {
 // 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
 // 	if (ls->img_ptr)
@@ -385,12 +394,34 @@ void		rotate(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols)
 		{
-			y = ((ls->orig[i][j]).x * cos(rad(ls->angle_z)) - (ls->orig[i][j]).y * sin(rad(ls->angle_z))) * ls->zoom;
-			x = ((ls->orig[i][j]).x * sin(rad(ls->angle_z)) + (ls->orig[i][j]).y * cos(rad(ls->angle_z))) * ls->zoom;
-			// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
-			(ls->arr[i][j]).x = x;
-			(ls->arr[i][j]).y = y;
-			if ((ls->arr[i][j]).z)
+			// if (ls->angle_z)
+			{
+				y = ((ls->orig[i][j]).x * cos(rad(ls->angle_z)) - (ls->orig[i][j]).y * sin(rad(ls->angle_z))) * ls->zoom;
+				x = ((ls->orig[i][j]).x * sin(rad(ls->angle_z)) + (ls->orig[i][j]).y * cos(rad(ls->angle_z))) * ls->zoom;
+				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
+				(ls->arr[i][j]).x = x;
+				(ls->arr[i][j]).y = y;
+			}
+		
+			if (ls->angle_y)
+			{
+				z = ((ls->arr[i][j]).x * cos(rad(ls->angle_y)) - (ls->arr[i][j]).x * sin(rad(ls->angle_y)));
+				x = ((ls->arr[i][j]).z * sin(rad(ls->angle_y)) + (ls->arr[i][j]).x * cos(rad(ls->angle_y)));
+				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
+				(ls->arr[i][j]).x = x;
+				(ls->arr[i][j]).z = z;
+			}
+
+			if (ls->angle_x)
+			{
+				y = ((ls->arr[i][j]).y * cos(rad(ls->angle_x)) - (ls->arr[i][j]).z * sin(rad(ls->angle_x)));
+				z = ((ls->arr[i][j]).y * sin(rad(ls->angle_x)) + (ls->arr[i][j]).z * cos(rad(ls->angle_x)));
+				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
+				(ls->arr[i][j]).z = z;
+				(ls->arr[i][j]).y = y;
+			}
+
+			if ((ls->arr[i][j]).z != 0)
 				pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, 0x0000FFFF);
 			else
 				pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, 0x00FF0000);
@@ -491,6 +522,8 @@ int			main(int argc, char **argv)
 		// print_struct(ls);
 		ls->mlx_ptr = mlx_init();
 		ls->zoom = 10;
+		// ls->angle_x = 45;
+		// ls->angle_y = 30;
 		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 1);
 		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 1);
 		printf("window %d x %d\n", ls->size_x, ls->size_y);
