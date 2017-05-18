@@ -104,50 +104,55 @@ FLOAT_T		rad(double deg)
 	return (deg * M_PI / 180.0);
 }
 
-/*void		coun_coord(t_fdf *ls, int i, int j)
-{
-	ls->y1 = i * ls->zoom ;
-	ls->x1 = j * ls->zoom ;
-	ls->x2 = (j + ((j < ls->num_cols - 1) ? 1 : 0)) * ls->zoom ;
-	ls->y2 = (i) * ls->zoom ;			
-	draw_line(ls);
-	ls->y1 = i * ls->zoom ;
-	ls->x1 = j * ls->zoom ;
-	ls->x2 = (j) * ls->zoom ;
-	ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
-	draw_line(ls);
-}*/
-
-/*void		print_lines(t_fdf *ls)
+void		find_height(t_fdf *ls)
 {
 	int	i;
 	int	j;
 
+	ls->max_h = (ls->arr[0][0]).z;
+	ls->min_h = (ls->arr[0][0]).z;
 	i = 0;
-	while (i < ls->num_rows && i < ls->size_x)
+	while (i < ls->num_rows)
 	{
 		j = 0;
-		while (j < ls->num_cols && j < ls->size_y)
+		while (j < ls->num_cols)
 		{
-			// if ((ls->arr[i][j]).z)
-			// {
-			// 	coun_coord(ls, i ,j);
-			// }
-			ls->y1 = i * ls->zoom ;
-			ls->x1 = j * ls->zoom ;
-			ls->x2 = (j + ((j < ls->num_cols - 1) ? 1 : 0)) * ls->zoom ;
-			ls->y2 = (i) * ls->zoom ;			
-			draw_line(ls);
-			ls->y1 = i * ls->zoom ;
-			ls->x1 = j * ls->zoom ;
-			ls->x2 = (j) * ls->zoom ;
-			ls->y2 = (i + ((i < ls->num_rows - 1) ? 1 : 0)) * ls->zoom ;
-			draw_line(ls);
+			if (ls->max_h < (ls->arr[i][j]).z)
+				ls->max_h = (ls->arr[i][j]).z;
+			if (ls->min_h > (ls->arr[i][j]).z)
+				ls->min_h = (ls->arr[i][j]).z;
 			j++;
 		}
 		i++;
 	}
-}*/
+	printf("max_h = %d; min_h = %d\n", ls->max_h, ls->min_h);
+}
+
+void			make_color(t_fdf *ls)
+{
+	int	i;
+	int	j;
+	int red;
+	int blue;
+
+	find_height(ls);
+	i = 0;
+	while (i < ls->num_rows)
+	{
+		j = 0;
+		while (j < ls->num_cols)
+		{
+			blue = (255 / (ls->max_h - ls->min_h + 1)) * ((ls->orig)[i][j]).z;
+			red = 255 - blue;
+			((ls->orig)[i][j]).color = red;
+			((ls->orig)[i][j]).color = ((ls->orig)[i][j]).color << 16;
+			((ls->orig)[i][j]).color += blue;
+			((ls->arr)[i][j]).color = ((ls->orig)[i][j]).color;
+			j++;
+		}
+		i++;
+	}
+}
 
 void		convert_row(t_fdf *ls, char **row, int r_num)
 {
@@ -217,32 +222,6 @@ void		count_save_rows(t_fdf *ls)
 	close(ls->fd);
 }
 
-/*void		print_in_window(t_fdf *ls)
-{
-	int	i;
-	int	j;
-
-	i = 0;
-	while (i < ls->num_rows && i < ls->size_x)
-	{
-		j = 0;
-		while (j < ls->num_cols && j < ls->size_y)
-		{
-			if ((ls->arr[i][j]).z)
-			{
-				mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, j * ls->zoom + 10,
-					i * ls->zoom + 10, 0x0000FFFF);
-				// printf("put pixel: x=%d y=%d\n", i, j);
-			}
-			else
-				mlx_pixel_put(ls->mlx_ptr, ls->win_ptr,
-					j * ls->zoom + 10, i * ls->zoom + 10, 0x00FF0000);
-			j++;
-		}
-		i++;
-	}
-}*/
-
 void		redraw(t_fdf *ls)
 {
 	// printf("clear ptr\n");
@@ -260,10 +239,10 @@ void		redraw(t_fdf *ls)
 	// printf("make_image\n");
 	// make_image(ls);
 	// printf("rotate\n");
-	if (ls->angle_z)
+	// if (ls->angle_z)
 		rotate(ls);
-	else
-		make_image(ls);
+	// else
+		// make_image(ls);
 	// printf("make_lines\n");
 	// make_lines(ls);
 	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
@@ -291,19 +270,25 @@ int			key_f(int key, void *ls_void)
 	if (key == 82)//zoom reset
 		ls->zoom = 1;
 	if (key == 123)//left
-		(ls->angle_z) -= 10;
-	if (key == 124)//right
-		(ls->angle_z) += 10;
-	if (key == 125)//down
 		(ls->angle_x) -= 10;
-	if (key == 126)//UP
+	if (key == 124)//right
 		(ls->angle_x) += 10;
-	if (abs(ls->angle_x) == 360)
+	if (key == 125)//down
+		(ls->angle_z) -= 10;
+	if (key == 126)//UP
+		(ls->angle_z) += 10;
+	if (ABS(ls->angle_x) == 360)
 		ls->angle_x = 0;
-	if (abs(ls->angle_y) == 360)
+	if (ABS(ls->angle_y) == 360)
 		ls->angle_y = 0;
-	if (abs(ls->angle_z) == 360)
+	if (ABS(ls->angle_z) == 360)
 		ls->angle_z = 0;
+	if (key == 15)
+	{
+		ls->angle_x = 0;
+		ls->angle_y = 0;
+		ls->angle_z = 0;
+	}
 	if (key == 53)//exit by escape
 	{
 		mlx_destroy_window(ls->mlx_ptr, ls->win_ptr);
@@ -358,15 +343,9 @@ void		pixel_to_img(t_fdf *ls, int i, int j, int color)
 {
 	int *tmp;
 
-	/*if ((i > ls->size_y - 20) || (j >  ls->size_x - 20))
-	{
-		// printf("%d:%d\n", i, j);
-		return ;
-	}*/
+	i += ls->center_x;
+	j += ls->center_y;
 	tmp = (int *)&(ls->data[IMG_ROW(i) + IMG_COL(j)]);
-	// if (tmp >= (int *)(ls->data)+(ls->size_line) && tmp <=(int *)(ls->data)+(ls->size_line)+4*5)
-	// if (j > 0 && j < 5 && i == 1)
-		// printf("i=%d j=%d\n", i , j);
 	if ((i < ls->size_y) && (j <  ls->size_x) && i >= 0 && j >= 0)
 		*tmp = color;
 }
@@ -380,14 +359,6 @@ void		rotate(t_fdf *ls)
 	FLOAT_T z;
 
 	printf("rotate\nangle: x=%d; y=%d; z=%d\n", ls->angle_x, ls->angle_y, ls->angle_z);
-// {
-// 	mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
-// 	if (ls->img_ptr)
-// 		mlx_destroy_image(ls->mlx_ptr, ls->img_ptr);
-// 	ls->img_ptr = mlx_new_image(ls->mlx_ptr, ls->size_x, ls->size_y);
-// 	ls->data = mlx_get_data_addr(ls->img_ptr, &(ls->bits_per_pixel), &(ls->size_line), &(ls->endian));
-	
-// }
 	i = 0;
 	while (i < ls->num_rows)
 	{
@@ -396,17 +367,17 @@ void		rotate(t_fdf *ls)
 		{
 			// if (ls->angle_z)
 			{
-				y = ((ls->orig[i][j]).x * cos(rad(ls->angle_z)) - (ls->orig[i][j]).y * sin(rad(ls->angle_z))) * ls->zoom;
-				x = ((ls->orig[i][j]).x * sin(rad(ls->angle_z)) + (ls->orig[i][j]).y * cos(rad(ls->angle_z))) * ls->zoom;
+				y = ((ls->orig[i][j]).x * cos(rad(ls->angle_y)) - (ls->orig[i][j]).y * sin(rad(ls->angle_y))) * ls->zoom;
+				x = ((ls->orig[i][j]).x * sin(rad(ls->angle_y)) + (ls->orig[i][j]).y * cos(rad(ls->angle_y))) * ls->zoom;
 				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
 				(ls->arr[i][j]).x = x;
 				(ls->arr[i][j]).y = y;
 			}
 		
-			if (ls->angle_y)
+			// if (ls->angle_y)
 			{
-				z = ((ls->arr[i][j]).x * cos(rad(ls->angle_y)) - (ls->arr[i][j]).x * sin(rad(ls->angle_y)));
-				x = ((ls->arr[i][j]).z * sin(rad(ls->angle_y)) + (ls->arr[i][j]).x * cos(rad(ls->angle_y)));
+				z = ((ls->orig[i][j]).z * ls->zoom * cos(rad(ls->angle_z)) - (ls->arr[i][j]).x * sin(rad(ls->angle_z)));
+				x = ((ls->orig[i][j]).z * ls->zoom * sin(rad(ls->angle_z)) + (ls->arr[i][j]).x * cos(rad(ls->angle_z)));
 				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
 				(ls->arr[i][j]).x = x;
 				(ls->arr[i][j]).z = z;
@@ -420,17 +391,12 @@ void		rotate(t_fdf *ls)
 				(ls->arr[i][j]).z = z;
 				(ls->arr[i][j]).y = y;
 			}
-
-			if ((ls->arr[i][j]).z != 0)
-				pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, 0x0000FFFF);
-			else
-				pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, 0x00FF0000);
+			pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, (ls->arr[i][j]).color);
 			j++;
 		}
 		i++;
 	}
 	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
-	// redraw(ls);
 }
 
 void		make_image(t_fdf *ls)
@@ -518,14 +484,21 @@ int			main(int argc, char **argv)
 		ls->addr = argv[1];
 		count_save_rows(ls);
 		// printf("rows = %d\n", ls->num_rows);
+		
 		rows_into_array(ls);
+		make_color(ls);
 		// print_struct(ls);
+		
 		ls->mlx_ptr = mlx_init();
-		ls->zoom = 10;
-		// ls->angle_x = 45;
-		// ls->angle_y = 30;
+		ls->zoom = 50;
+		ls->angle_z = -45;
+		ls->angle_x = -30;
 		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 1);
 		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 1);
+		ls->size_x = MIN(2560, (int)ceil(sqrt(ls->size_x * ls->size_x + ls->size_y * ls->size_y)));
+		ls->size_y = MIN(1315, (int)ceil(sqrt(ls->size_x * ls->size_x + ls->size_y * ls->size_y)));
+		ls->center_x = ls->size_x / 2;
+		ls->center_y = ls->size_y / 2;
 		printf("window %d x %d\n", ls->size_x, ls->size_y);
 		if (ls->mlx_ptr)
 		{

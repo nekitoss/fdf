@@ -48,6 +48,10 @@ typedef struct	s_fdf
 	int		angle_x;
 	int		angle_y;
 	int		angle_z;
+	int		center_x;
+	int		center_y;
+	int		max_h;
+	int		min_h;
 }				t_fdf;
 
 typedef struct	s_img
@@ -79,5 +83,8 @@ void		make_lines(t_fdf *ls);
 void		pixel_to_img(t_fdf *ls, int i, int j, int color);
 void		redraw(t_fdf *ls);
 void		rotate(t_fdf *ls);
+void		make_color(t_fdf *ls);
+void		find_height(t_fdf *ls);
+
 
 #endif
