@@ -269,20 +269,32 @@ int			key_f(int key, void *ls_void)
 		ls->zoom *= 0.5;
 	if (key == 82)//zoom reset
 		ls->zoom = 1;
-	if (key == 123)//left
+	if (key == 0)//A=left
+		(ls->angle_x) -= 10;
+	if (key == 2)//D=right
+		(ls->angle_x) += 10;
+	if (key == 1)//S=down
+		(ls->angle_z) -= 10;
+	if (key == 13)//W=UP
+		(ls->angle_z) += 10;
+	if (key == 12)//Q=clock
+		(ls->angle_y) -= 10;
+	if (key == 14)//E=clock
+		(ls->angle_y) += 10;
+	/*if (key == 123)//left
 		(ls->angle_x) -= 10;
 	if (key == 124)//right
 		(ls->angle_x) += 10;
 	if (key == 125)//down
 		(ls->angle_z) -= 10;
 	if (key == 126)//UP
-		(ls->angle_z) += 10;
-	if (ABS(ls->angle_x) == 360)
-		ls->angle_x = 0;
-	if (ABS(ls->angle_y) == 360)
-		ls->angle_y = 0;
-	if (ABS(ls->angle_z) == 360)
-		ls->angle_z = 0;
+		(ls->angle_z) += 10;*/
+	// if (ABS(ls->angle_x) == 360)
+	// 	ls->angle_x = 0;
+	// if (ABS(ls->angle_y) == 360)
+	// 	ls->angle_y = 0;
+	// if (ABS(ls->angle_z) == 360)
+	// 	ls->angle_z = 0;
 	if (key == 15)
 	{
 		ls->angle_x = 0;
@@ -365,32 +377,19 @@ void		rotate(t_fdf *ls)
 		j = 0;
 		while (j < ls->num_cols)
 		{
-			// if (ls->angle_z)
-			{
-				y = ((ls->orig[i][j]).x * cos(rad(ls->angle_y)) - (ls->orig[i][j]).y * sin(rad(ls->angle_y))) * ls->zoom;
-				x = ((ls->orig[i][j]).x * sin(rad(ls->angle_y)) + (ls->orig[i][j]).y * cos(rad(ls->angle_y))) * ls->zoom;
-				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
-				(ls->arr[i][j]).x = x;
-				(ls->arr[i][j]).y = y;
-			}
-		
-			// if (ls->angle_y)
-			{
-				z = ((ls->orig[i][j]).z * ls->zoom * cos(rad(ls->angle_z)) - (ls->arr[i][j]).x * sin(rad(ls->angle_z)));
-				x = ((ls->orig[i][j]).z * ls->zoom * sin(rad(ls->angle_z)) + (ls->arr[i][j]).x * cos(rad(ls->angle_z)));
-				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
-				(ls->arr[i][j]).x = x;
-				(ls->arr[i][j]).z = z;
-			}
-
-			if (ls->angle_x)
-			{
-				y = ((ls->arr[i][j]).y * cos(rad(ls->angle_x)) - (ls->arr[i][j]).z * sin(rad(ls->angle_x)));
-				z = ((ls->arr[i][j]).y * sin(rad(ls->angle_x)) + (ls->arr[i][j]).z * cos(rad(ls->angle_x)));
-				// printf("%6.2f:%6.2f   ->   %6.2f:%6.2f\n", (ls->arr[i][j]).x, (ls->orig[i][j]).y, x, y);
-				(ls->arr[i][j]).z = z;
-				(ls->arr[i][j]).y = y;
-			}
+			
+			y = ((ls->orig[i][j]).x * cos(rad(ls->angle_y)) - (ls->orig[i][j]).y * sin(rad(ls->angle_y))) * ls->zoom;
+			x = ((ls->orig[i][j]).x * sin(rad(ls->angle_y)) + (ls->orig[i][j]).y * cos(rad(ls->angle_y))) * ls->zoom;
+			(ls->arr[i][j]).x = x;
+			(ls->arr[i][j]).y = y;
+			z = ((ls->orig[i][j]).z * ls->zoom * cos(rad(ls->angle_z)) - (ls->arr[i][j]).x * sin(rad(ls->angle_z)));
+			x = ((ls->orig[i][j]).z * ls->zoom * sin(rad(ls->angle_z)) + (ls->arr[i][j]).x * cos(rad(ls->angle_z)));
+			(ls->arr[i][j]).x = x;
+			(ls->arr[i][j]).z = z;
+			y = ((ls->arr[i][j]).y * cos(rad(ls->angle_x)) - (ls->arr[i][j]).z * sin(rad(ls->angle_x)));
+			z = ((ls->arr[i][j]).y * sin(rad(ls->angle_x)) + (ls->arr[i][j]).z * cos(rad(ls->angle_x)));
+			(ls->arr[i][j]).z = z;
+			(ls->arr[i][j]).y = y;
 			pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, (ls->arr[i][j]).color);
 			j++;
 		}
