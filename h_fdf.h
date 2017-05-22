@@ -76,7 +76,7 @@ void		print_in_window(t_fdf *ls);
 void		zoom_reset(t_fdf *ls);
 void		zoom_in(t_fdf *ls);
 void		zoom(t_fdf *ls, int step);
-int			key_f(int key, void *ls_void);
+int			key_f(int key, t_fdf *ls);
 int			test(void *ls_void);
 void		make_image(t_fdf *ls);
 void		make_lines(t_fdf *ls);

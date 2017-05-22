@@ -243,8 +243,8 @@ void		redraw(t_fdf *ls)
 		rotate(ls);
 	// else
 		// make_image(ls);
-	// printf("make_lines\n");
-	// make_lines(ls);
+	printf("make_lines\n");
+	make_lines(ls);
 	// printf("\n\n"); printBits (ls->size_line*ls->num_rows, ls->data);
 	printf("put image\n");
 	mlx_put_image_to_window(ls->mlx_ptr, ls->win_ptr, ls->img_ptr, 10, 10);
@@ -256,11 +256,8 @@ void		redraw(t_fdf *ls)
 	// print_struct(ls);
 }
 
-int			key_f(int key, void *ls_void)
+int			key_f(int key, t_fdf *ls)
 {
-	t_fdf	*ls;
-
-	ls = (t_fdf *)ls_void;
 	// mlx_clear_window(ls->mlx_ptr, ls->win_ptr);
 		printf("key=%d\n", key);
 	if (key == 69 || key == 24)//zoom in
@@ -318,6 +315,51 @@ int			test(void *ls_void)
 	return (0);
 }
 
+void segment(int x0, int y0, int x1, int y1, t_fdf *ls, int color)
+{
+  int dx = abs(x1 - x0);
+  int dy = abs(y1 - y0);
+  int sx = x1 >= x0 ? 1 : -1;
+  int sy = y1 >= y0 ? 1 : -1;
+  
+  if (dy <= dx)
+  {
+    int d = (dy << 1) - dx;
+    int d1 = dy << 1;
+    int d2 = (dy - dx) << 1;
+    pixel_to_img(ls, x0, y0, color);
+    for(int x = x0 + sx, y = y0, i = 1; i <= dx; i++, x += sx)
+    {
+      if ( d >0)
+      {
+        d += d2;
+        y += sy;
+      }
+      else
+        d += d1;
+      pixel_to_img(ls, x, y, color);
+    }
+  }
+  else
+  {
+    int d = (dx << 1) - dy;
+    int d1 = dx << 1;
+    int d2 = (dx - dy) << 1;
+    pixel_to_img(ls, x0, y0, color);
+    for(int y = y0 + sy, x = x0, i = 1; i <= dy; i++, y += sy)
+    {
+      if ( d >0)
+      {
+        d += d2;
+        x += sx;
+      }
+      else
+        d += d1;
+      pixel_to_img(ls, x, y, color);
+    }
+  }
+}
+
 void		draw_line(t_fdf *ls)
 {
 	int			error;
@@ -325,18 +367,19 @@ void		draw_line(t_fdf *ls)
 	int			delta_y;
 	int			delta_x;
 
-	// printf("drw=%d:%d; %d:%d\n", ls->x1, ls->y1, ls->x2, ls->y2);
+	printf("drw=%d:%d; %d:%d\n", ls->x1, ls->y1, ls->x2, ls->y2);
 	delta_y = ABS(ls->y2 - ls->y1);
 	delta_x = ABS(ls->x2 - ls->x1);
 	error = delta_x - delta_y;
-	error2 = error * 2;
+	
 	while ((ls->x1 != ls->x2 || ls->y1 != ls->y2))
 	{
 		// mlx_pixel_put(ls->mlx_ptr, ls->win_ptr, ls->x1 + 10,
 			// ls->y1 + 10, 0x000000FF);
 		pixel_to_img(ls, ls->y1, ls->x1, 0x000000FF);
+		error2 = error * 2;
 		// if ( ls->y1 == 1 && ls->x1 < 10)
-			// printf("%d:%d ", ls->y1, ls->x1);
+			printf("%d:%d %d:%d    ", ls->y1, ls->x1, error, error2);
 		if (error2 > -delta_y)
 		{
 			error -= delta_y;
@@ -356,7 +399,7 @@ void		pixel_to_img(t_fdf *ls, int i, int j, int color)
 	int *tmp;
 
 	i += ls->center_x;
-	j += ls->center_y;
+	// j += ls->center_y;
 	tmp = (int *)&(ls->data[IMG_ROW(i) + IMG_COL(j)]);
 	if ((i < ls->size_y) && (j <  ls->size_x) && i >= 0 && j >= 0)
 		*tmp = color;
@@ -391,6 +434,7 @@ void		rotate(t_fdf *ls)
 			(ls->arr[i][j]).z = z;
 			(ls->arr[i][j]).y = y;
 			pixel_to_img(ls, (ls->arr[i][j]).x, (ls->arr[i][j]).y, (ls->arr[i][j]).color);
+			// printf("arr[%d][%d]= %f:%f\n", i,j,(ls->arr[i][j]).x ,(ls->arr[i][j]).y);
 			j++;
 		}
 		i++;
@@ -450,22 +494,37 @@ void		make_lines(t_fdf *ls)
 */
 			// if ((ls->arr[i][j]).z > 1)
 			{
-			ls->y1 = (ls->arr[i][j]).y;
 			ls->x1 = (ls->arr[i][j]).x;
+			// printf("ls->y1 = (ls->arr[%d][%d]).y = %f; \n", i, j, (ls->arr[i][j]).y);
+			ls->y1 = (ls->arr[i][j]).y;
+			// printf("ls->x1 = (ls->arr[%d][%d]).x = %f; \n", i, j, (ls->arr[i][j]).x);
+			ls->y2 = (ls->arr[i][(j + ((j < ls->num_cols - 1) ? 1 : 0))]).y;
+			// printf("ls->x2 = (ls->arr[%d][%d]).x = %f; \n", i, (j + ((j < ls->num_cols - 1) ? 1 : 0)), (ls->arr[i][(j + ((j < ls->num_cols - 1) ? 1 : 0))]).x);
 			ls->x2 = (ls->arr[i][(j + ((j < ls->num_cols - 1) ? 1 : 0))]).x;
-			ls->y2 = (ls->arr[i][j]).y;
+			// printf("ls->y2 = (ls->arr[%d][%d]).y = %f; \n", i, j, (ls->arr[i][j]).y);
 			// printf("i=%d; j=%d\n", i, (j + ((j < ls->num_cols - 1) ? 1 : 0)));
-			// printf("1)%d:%d -> %d:%d\n", ls->x1, ls->y1, ls->x2, ls->y2);			
-			draw_line(ls);
-			ls->y1 = (ls->arr[i][j]).y;
+			// printf("1)i=%d:j1=%d:j2=%d   %d:%d -> %d:%d\n", i, j,(j + ((j < ls->num_cols - 1) ? 1 : 0)), ls->x1, ls->y1, ls->x2, ls->y2);			
+			// draw_line(ls);
+			segment(ls->x1, ls->y1, ls->x2, ls->y2, ls, (ls->arr[i][j]).color);
 			ls->x1 = (ls->arr[i][j]).x;
-			ls->x2 = (ls->arr[i][j]).x;
+			// printf("ls->y1 = (ls->arr[%d][%d]).y = %f; \n", i, j, (ls->arr[i][j]).y);
+			ls->y1 = (ls->arr[i][j]).y;
+			// printf("ls->x1 = (ls->arr[%d][%d]).x = %f; \n", i, j, (ls->arr[i][j]).x);
 			ls->y2 = (ls->arr[(i + ((i < ls->num_rows - 1) ? 1 : 0))][j]).y;
+			// printf("ls->x2 = (ls->arr[%d][%d]).x = %f; \n", i, j, (ls->arr[i][j]).x);
+			ls->x2 = (ls->arr[(i + ((i < ls->num_rows - 1) ? 1 : 0))][j]).x;
+			// printf("ls->y2 = (ls->arr[%d][%d]).y = %f; \n", (i + ((i < ls->num_rows - 1) ? 1 : 0)), j, (ls->arr[(i + ((i < ls->num_rows - 1) ? 1 : 0))][j]).y);
 			// printf("i=%d; j=%d\n",(i + ((i < ls->num_rows - 1) ? 1 : 0)),j );
-			// printf("2)%d:%d -> %d:%d\n\n", ls->x1, ls->y1, ls->x2, ls->y2);
-			draw_line(ls);
-			j++;
+			// printf("2)i=%d:j1=%d:j2=%d   %d:%d -> %d:%d\n", i, j,(j + ((j < ls->num_cols - 1) ? 1 : 0)), ls->x1, ls->y1, ls->x2, ls->y2);	
+			// draw_line(ls);
+			segment(ls->x1, ls->y1, ls->x2, ls->y2, ls, (ls->arr[i][j]).color);
 			}
+			// ls->y1 = 0;
+			// ls->x1 = 0;
+			// ls->x2 = 4;
+			// ls->y2 = 24;
+			// draw_line(ls);
+			j++;
 		}
 		i++;
 	}
@@ -489,9 +548,10 @@ int			main(int argc, char **argv)
 		// print_struct(ls);
 		
 		ls->mlx_ptr = mlx_init();
-		ls->zoom = 50;
-		ls->angle_z = -45;
-		ls->angle_x = -30;
+		ls->zoom = 100;
+		ls->angle_z = 200;
+		ls->angle_x = -170;
+		ls->angle_y = -200;
 		ls->size_x = MIN(2560, (ls->num_cols - 1) * (ls->zoom) + 1);
 		ls->size_y = MIN(1315, (ls->num_rows - 1) * (ls->zoom) + 1);
 		ls->size_x = MIN(2560, (int)ceil(sqrt(ls->size_x * ls->size_x + ls->size_y * ls->size_y)));
@@ -519,7 +579,7 @@ int			main(int argc, char **argv)
 				// mlx_do_key_autorepeaton(ls->mlx_ptr);
 				// print_in_window(ls);
 				// print_lines(ls);
-				mlx_key_hook(ls->win_ptr, key_f, (void *)ls);
+				mlx_hook(ls->win_ptr, 2, 5, key_f, ls);
 				// mlx_expose_hook (ls->win_ptr, test, (void *)ls);
 				mlx_loop(ls->mlx_ptr);
 			}
