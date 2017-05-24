@@ -10,6 +10,8 @@
 # define FLOAT_T float
 # define IMG_ROW(a) (a * (ls->size_line))
 # define IMG_COL(b) (b * (ls->bits_per_pixel / 8))
+# define WHITE 0x00FFFFFF
+# define MAX(a, b) ((a > b) ? a : b)
 
 typedef struct	s_point
 {
@@ -52,6 +54,11 @@ typedef struct	s_fdf
 	int		center_y;
 	int		max_h;
 	int		min_h;
+	char	color_off;
+	char	lines_off;
+	int		shift_x;
+	int		shift_y;
+	char	help_on;
 }				t_fdf;
 
 typedef struct	s_img
