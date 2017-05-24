@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   h_fdf.h                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nekitoss <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/24 21:22:18 by nekitoss          #+#    #+#             */
+/*   Updated: 2017/05/24 21:22:19 by nekitoss         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef H_FDF_H
 # define H_FDF_H
 # include <math.h>
@@ -7,7 +19,6 @@
 # define IMG_ROW(a) (a * (ls->size_line))
 # define IMG_COL(b) (b * (ls->bits_per_pixel / 8))
 # define WHITE 0x00FFFFFF
-# define MAX(a, b) ((a > b) ? a : b)
 
 typedef struct	s_point
 {
@@ -72,7 +83,7 @@ typedef struct	s_img
 
 void			error(char *str);
 void			error_msg(char *str);
-void			print_struct(t_fdf *ls);
+void			print_help(t_fdf *ls);
 void			del_struct(t_fdf *ls);
 void			draw_line(t_fdf *ls);
 void			print_lines(t_fdf *ls);

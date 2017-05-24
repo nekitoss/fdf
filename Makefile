@@ -1,6 +1,11 @@
 NAME = fdf
 
-SRC = fdf.c
+SRC = fdf.c\
+	drawing.c\
+	rotation.c\
+	lines.c\
+	preparation.c\
+	messages.c
 
 OBJ = $(SRC:.c=.o)
 
@@ -47,15 +52,3 @@ libfclean:
 
 libre:
 	@$(LIBMAKE) re
-
-# main: all
-# 	@gcc -Wall -Wextra -Werror $(NAME) main.c
-# 	@echo  "\x1b[32mLibrary and main.c compilation finished\x1b[0m"
-
-# mre: fclean main
-
-# maind: all
-# 	@gcc -Wall -Wextra -Werror -Wno-format-invalid-specifier -Wno-format -Wno-macro-redefined -Wno-implicitly-unsigned-literal $(NAME) printf_main.c
-# 	@echo  "\x1b[32mLibrary and printf_main.c compilation with additional flags finished\x1b[0m"
-
-# mdre: fclean maind
