@@ -12,7 +12,7 @@ You can rotate, zoom, move and visualize height. Run program to see controls.
 
 to clone with submodule:
 
-git clone https://github.com/nekitoss/ft_printf.git
+git clone https://github.com/nekitoss/fdf.git
 
 git submodule init
 
